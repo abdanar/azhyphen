@@ -1,0 +1,7 @@
+% TEST ONLY: deliberately simple patterns, not linguistic Azerbaijani data.
+fo1to
+el1lər
+ad1dım
+vi1deo
+ət1ür
+

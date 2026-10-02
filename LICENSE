@@ -1,0 +1,19 @@
+The azhyphen package is distributed under the LaTeX Project Public License,
+version 1.3c or (at your option) any later version.
+
+The license text is available at
+https://www.latex-project.org/lppl/lppl-1-3c.txt and is included in TeX Live
+as `lppl1.3c.txt`.
+
+The package has the LPPL maintenance status "maintained". The Current
+Maintainer is the azhyphen project maintainer. The maintained files are all
+files in this repository except imported pattern data whose notices state
+otherwise. In particular, the maintained runtime files are:
+
+  tex/latex/azhyphen/azhyphen.sty
+  tex/latex/azhyphen/azhyphen.lua
+  tex/latex/azhyphen/azhyphen.hyp.txt
+  tex/latex/azhyphen/azhyphen-xetex.tex
+
+Imported `azhyphen.pat.txt` data may carry an additional compatible copyright
+notice supplied by its source project.

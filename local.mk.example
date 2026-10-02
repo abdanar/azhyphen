@@ -1,0 +1,2 @@
+# Copy this file to local.mk and adjust the developer-local source path.
+PATTERNS := ../localization/path/to/generated/patterns.txt

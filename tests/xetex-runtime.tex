@@ -1,0 +1,22 @@
+\documentclass{article}
+\usepackage{azhyphen}
+
+\begin{document}
+\makeatletter
+\@ifundefined{l@azhyphen}
+  {\PackageError{azhyphen-test}{azhyphen language is not registered}{}}
+  {\ifnum\language=\l@azhyphen\relax
+     \typeout{AZHYPHEN-XETEX-LANGUAGE-SELECTED}%
+   \else
+     \PackageError{azhyphen-test}{azhyphen language is not selected}{}%
+   \fi}
+\ifnum\lccode`I=`ı\relax\else
+  \PackageError{azhyphen-test}{I does not map to dotless i}{}%
+\fi
+\ifnum\lccode`İ=`i\relax\else
+  \PackageError{azhyphen-test}{dotted I does not map to i}{}%
+\fi
+\makeatother
+\showhyphens{fotoelektrik ellərarası addımölçən videobloger ətürpərdici}
+Azərbaycan dilində mətn burada yazılır.
+\end{document}

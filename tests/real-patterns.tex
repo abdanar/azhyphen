@@ -1,0 +1,13 @@
+\documentclass{article}
+\usepackage{azhyphen}
+
+\begin{document}
+\directlua{
+  local module = assert(package.loaded.azhyphen)
+  local language_id = module.activate()
+  assert(type(language_id) == "number", "no Azerbaijani language ID")
+  assert(tex.language == language_id, "Azerbaijani language is not active")
+}
+\showhyphens{fotoelektrik ellərarası addımölçən videobloger ətürpərdici}
+Real-pattern loading checks passed.
+\end{document}

@@ -1,0 +1,10 @@
+\documentclass{article}
+\begin{document}
+\makeatletter
+\@ifundefined{l@azhyphen-unrelated}
+  {\PackageError{azhyphen-test}{unrelated language registration was lost}{}}
+  {\typeout{AZHYPHEN-UNRELATED-LANGUAGE-PRESERVED}}
+\makeatother
+Unrelated registration preservation check passed.
+\end{document}
+

@@ -1,0 +1,71 @@
+%% azhyphen.sty -- standalone Azerbaijani hyphenation for LuaLaTeX and XeLaTeX
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{azhyphen}[2026/10/02 v0.1.0 Standalone Azerbaijani hyphenation]
+
+\RequirePackage{iftex}
+\ifluatex
+  \directlua{
+    local path = kpse.find_file("azhyphen.lua", "tex")
+    if not path then
+      tex.error("azhyphen: runtime file not found", {
+        "kpathsea could not find azhyphen.lua.",
+        "Check that the complete azhyphen package is installed."
+      })
+    else
+      local chunk, load_error = loadfile(path)
+      if not chunk then
+        tex.error("azhyphen: cannot load runtime: " .. tostring(load_error))
+      else
+        local ok, module_or_error = pcall(chunk)
+        if not ok then
+          tex.error("azhyphen: cannot initialize runtime: " ..
+            tostring(module_or_error))
+        elseif type(module_or_error) ~= "table" or
+               type(module_or_error.activate) ~= "function" then
+          tex.error("azhyphen: invalid runtime module", {
+            "azhyphen.lua did not return the expected interface."
+          })
+        else
+          local active, activation_error = pcall(module_or_error.activate)
+          if not active then
+            tex.error("azhyphen: initialization failed: " ..
+              tostring(activation_error))
+          end
+        end
+      end
+    end
+  }
+\else\ifxetex
+  \@ifundefined{l@azhyphen}{%
+    \PackageError{azhyphen}
+      {Azerbaijani XeTeX language is not registered}
+      {Run `make install' from the azhyphen source tree to register the\MessageBreak
+       bundled patterns and rebuild the user XeLaTeX format.}%
+  }{%
+    \global\language=\csname l@azhyphen\endcsname\relax
+    % Provisional conservative values pending Azerbaijani typographic review.
+    \global\lefthyphenmin=2\relax
+    \global\righthyphenmin=2\relax
+    \def\azhyphen@setcase#1#2{%
+      \global\lccode`#1=`#1\relax
+      \global\lccode`#2=`#1\relax
+      \global\uccode`#1=`#2\relax
+      \global\uccode`#2=`#2\relax
+    }%
+    \azhyphen@setcase{ç}{Ç}%
+    \azhyphen@setcase{ə}{Ə}%
+    \azhyphen@setcase{ğ}{Ğ}%
+    \azhyphen@setcase{i}{İ}%
+    \azhyphen@setcase{ı}{I}%
+    \azhyphen@setcase{ö}{Ö}%
+    \azhyphen@setcase{ş}{Ş}%
+    \azhyphen@setcase{ü}{Ü}%
+  }%
+\else
+  \PackageError{azhyphen}
+    {LuaLaTeX or XeLaTeX is required}
+    {Compile this document with LuaLaTeX or XeLaTeX.\MessageBreak
+     azhyphen does not support other engines.}
+\fi\fi
+
+\endinput

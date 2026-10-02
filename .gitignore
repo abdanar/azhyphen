@@ -1,0 +1,13 @@
+*.aux
+*.log
+*.out
+*.pdf
+*.xdv
+*.dvi
+*.fmt
+*.fls
+*.synctex.gz
+*.toc
+__pycache__/
+*.py[cod]
+local.mk

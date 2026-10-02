@@ -1,0 +1,24 @@
+\documentclass{article}
+\usepackage{azhyphen}
+
+\begin{document}
+\directlua{
+  local path = assert(kpse.find_file("azhyphen.lua", "tex"))
+  local first_module = assert(loadfile(path))()
+  local first_id = first_module.activate()
+  local second_module = assert(loadfile(path))()
+  local second_id = second_module.activate()
+  assert(first_module == second_module, "azhyphen module was not cached")
+  assert(first_id == second_id, "azhyphen language ID changed on activation")
+  local object = lang.new(first_id)
+  assert(lang.gethjcode(object, utf8.codepoint("I")) == utf8.codepoint("ı"),
+    "I must map to dotless ı")
+  assert(lang.gethjcode(object, utf8.codepoint("İ")) == utf8.codepoint("i"),
+    "İ must map to dotted i")
+  assert(tex.language == first_id, "Azerbaijani language is not active")
+  assert(tex.lefthyphenmin == 2 and tex.righthyphenmin == 2,
+    "documented hyphenation minima are not active")
+}
+Runtime checks passed.
+\end{document}
+
