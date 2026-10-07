@@ -35,14 +35,14 @@ Azerbaijani words. Evaluation uses a held-out set not used for training.
 
 | Metric | Current |
 |---|---:|
-| Training annotations | 2,000 |
-| Evaluation annotations | 262 |
+| Training annotations | 2,007 |
+| Evaluation annotations | 263 |
 | Patterns | 291 |
-| Exact word accuracy | 64.9% |
-| Break precision | 88.9% |
+| Exact word accuracy | 65.0% |
+| Break precision | 89.0% |
 | Break recall | 92.7% |
 | Break F1 | 90.8% |
-| Correct breakpoints | 594 |
+| Correct breakpoints | 599 |
 | Wrong breakpoints | 74 |
 | Missed breakpoints | 47 |
 <!-- AZHYPHEN-STATS:END -->
