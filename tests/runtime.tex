@@ -15,10 +15,15 @@
     "I must map to dotless ı")
   assert(lang.gethjcode(object, utf8.codepoint("İ")) == utf8.codepoint("i"),
     "İ must map to dotted i")
+  for _, pair in ipairs({{"ç", "Ç"}, {"ə", "Ə"}, {"ğ", "Ğ"},
+      {"i", "İ"}, {"ı", "I"}, {"ö", "Ö"}, {"ş", "Ş"}, {"ü", "Ü"}}) do
+    local lower = utf8.codepoint(pair[1])
+    assert(lang.gethjcode(object, lower) == lower)
+    assert(lang.gethjcode(object, utf8.codepoint(pair[2])) == lower)
+  end
   assert(tex.language == first_id, "Azerbaijani language is not active")
   assert(tex.lefthyphenmin == 2 and tex.righthyphenmin == 2,
     "documented hyphenation minima are not active")
 }
 Runtime checks passed.
 \end{document}
-

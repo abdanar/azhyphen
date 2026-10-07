@@ -1,6 +1,10 @@
 %% azhyphen.sty -- standalone Azerbaijani hyphenation for LuaLaTeX and XeLaTeX
+%% LPPL 1.3c or later; maintained by Anar Abdullayev. See LICENSE.
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{azhyphen}[2026/10/02 v0.1.0 Standalone Azerbaijani hyphenation]
+\InputIfFileExists{azhyphen-version.tex}{}{%
+  \errmessage{azhyphen: generated version metadata is missing}%
+}
+\ProvidesPackage{azhyphen}[2026/10/02 v\azhyphenversion\space Standalone Azerbaijani hyphenation]
 
 \RequirePackage{iftex}
 \ifluatex

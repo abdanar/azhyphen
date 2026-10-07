@@ -1,0 +1,47 @@
+name: Package or installation issue
+description: Report a loading, installation, or engine-integration problem.
+title: "[Package] "
+body:
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Engine
+      options:
+        - LuaLaTeX
+        - XeLaTeX
+    validations:
+      required: true
+  - type: input
+    id: tex
+    attributes:
+      label: TeX distribution and version
+      placeholder: TeX Live 2026
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: azhyphen version
+      placeholder: x.y.z
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Relevant error output
+      description: Include only the small relevant excerpt and remove secrets or private paths.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide the smallest non-sensitive document or command that reproduces the problem.
+      render: tex

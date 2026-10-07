@@ -4,11 +4,14 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
+import hashlib
 import json
 import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -27,7 +30,9 @@ class RegistrationError(RuntimeError):
     """Raised for a failed or unsafe registration operation."""
 
 
-def atomic_write(path: Path, contents: bytes, mode: int = 0o644) -> None:
+def atomic_write(path: Path, contents: bytes, mode: int | None = None) -> None:
+    if mode is None:
+        mode = stat.S_IMODE(path.stat().st_mode) if path.exists() else 0o644
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
         dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"
@@ -127,6 +132,34 @@ def rebuild_xelatex(environment: dict[str, str]) -> None:
     run_checked([fmtutil, "--byfmt", "xelatex"], environment)
 
 
+@contextmanager
+def preserve_on_failure(paths: tuple[Path, ...]):
+    """Restore configuration and ownership records if registration fails."""
+    previous = {
+        path: (path.read_bytes(), stat.S_IMODE(path.stat().st_mode))
+        if path.exists() else None
+        for path in paths
+    }
+    try:
+        yield
+    except BaseException:
+        for path, saved in previous.items():
+            if saved is None:
+                path.unlink(missing_ok=True)
+            else:
+                atomic_write(path, saved[0], saved[1])
+        raise
+
+
+def registered_text(text: str) -> str:
+    """Append our registration while retaining all unrelated lines verbatim."""
+    text, _ = remove_owned_registration(text)
+    if any(line.split("%", 1)[0].split()[:1] == [LANGUAGE_NAME]
+           for line in text.splitlines()):
+        raise RegistrationError("language name azhyphen is already registered to another loader")
+    return text + ("\n" if text and not text.endswith("\n") else "") + REGISTRATION_BLOCK
+
+
 def install(texmfhome: Path) -> None:
     package_directory = texmfhome / "tex" / "latex" / "azhyphen"
     loader = package_directory / LOADER_NAME
@@ -139,23 +172,33 @@ def install(texmfhome: Path) -> None:
     state = package_directory / ".azhyphen-xetex-state.json"
     backup = package_directory / ".azhyphen-language.dat.backup"
 
-    if not state.exists():
-        preexisting = language_dat.is_file()
-        if preexisting:
-            atomic_write(backup, language_dat.read_bytes())
-        atomic_write(
-            state,
-            (json.dumps({"language_dat_preexisting": preexisting}) + "\n").encode(
-                "utf-8"
-            ),
-            mode=0o600,
-        )
-
-    update_local_config(local_config, install=True)
     environment = dict(os.environ)
     environment["TEXMFHOME"] = str(texmfhome)
-    generate_language_dat(local_config, language_dat, environment)
-    rebuild_xelatex(environment)
+    with preserve_on_failure((local_config, language_dat, state, backup)):
+        if state.exists():
+            state_data = json.loads(state.read_text(encoding="utf-8"))
+            if language_dat.exists() and hashlib.sha256(
+                language_dat.read_bytes()
+            ).hexdigest() != state_data.get("installed_sha256"):
+                state_data["preserve_language_dat"] = True
+        else:
+            preexisting = language_dat.is_file()
+            state_data = {"language_dat_preexisting": preexisting}
+            if preexisting:
+                atomic_write(backup, language_dat.read_bytes())
+        # Check for a conflicting name before modifying shared configuration.
+        if local_config.exists():
+            registered_text(local_config.read_text(encoding="utf-8"))
+        update_local_config(local_config, install=True)
+        if language_dat.exists():
+            atomic_write(language_dat, registered_text(
+                language_dat.read_text(encoding="utf-8")
+            ).encode("utf-8"))
+        else:
+            generate_language_dat(local_config, language_dat, environment)
+        state_data["installed_sha256"] = hashlib.sha256(language_dat.read_bytes()).hexdigest()
+        atomic_write(state, (json.dumps(state_data) + "\n").encode("utf-8"), mode=0o600)
+        rebuild_xelatex(environment)
     print("XeLaTeX language registration installed")
 
 
@@ -167,32 +210,34 @@ def uninstall(texmfhome: Path) -> None:
     state = package_directory / ".azhyphen-xetex-state.json"
     backup = package_directory / ".azhyphen-language.dat.backup"
 
-    changed, has_unrelated_entries = update_local_config(local_config, install=False)
-    if not changed and not state.exists():
+    # No ownership record means we must not remove someone else's registration.
+    if not state.exists():
         print("XeLaTeX language registration already absent")
         return
 
     environment = dict(os.environ)
     environment["TEXMFHOME"] = str(texmfhome)
-    if has_unrelated_entries:
-        generate_language_dat(local_config, language_dat, environment)
-    elif state.exists():
-        try:
-            state_data = json.loads(state.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
-            raise RegistrationError(f"cannot read XeTeX registration state: {exc}") from exc
-        if state_data.get("language_dat_preexisting"):
-            if not backup.is_file():
-                raise RegistrationError("saved pre-install language.dat is missing")
-            atomic_write(language_dat, backup.read_bytes())
-        else:
-            language_dat.unlink(missing_ok=True)
-    else:
-        language_dat.unlink(missing_ok=True)
-
-    rebuild_xelatex(environment)
-    state.unlink(missing_ok=True)
-    backup.unlink(missing_ok=True)
+    with preserve_on_failure((local_config, language_dat, state, backup)):
+        state_data = json.loads(state.read_text(encoding="utf-8"))
+        _, has_unrelated_entries = update_local_config(local_config, install=False)
+        if language_dat.exists():
+            raw = language_dat.read_bytes()
+            unchanged = hashlib.sha256(raw).hexdigest() == state_data.get("installed_sha256")
+            if unchanged and not has_unrelated_entries and not state_data.get("preserve_language_dat"):
+                if state_data.get("language_dat_preexisting"):
+                    if not backup.is_file():
+                        raise RegistrationError("saved pre-install language.dat is missing")
+                    atomic_write(language_dat, backup.read_bytes())
+                else:
+                    language_dat.unlink()
+            else:
+                # Preserve edits made by other tools since installation, also
+                # for older state files without an installed checksum.
+                text, _ = remove_owned_registration(raw.decode("utf-8"))
+                atomic_write(language_dat, text.encode("utf-8"))
+        rebuild_xelatex(environment)
+        state.unlink(missing_ok=True)
+        backup.unlink(missing_ok=True)
     print("XeLaTeX language registration removed")
 
 
@@ -214,7 +259,7 @@ def main() -> int:
             install(texmfhome)
         else:
             uninstall(texmfhome)
-    except (OSError, RegistrationError, UnicodeError) as exc:
+    except (OSError, RegistrationError, UnicodeError, ValueError, AttributeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     return 0

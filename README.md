@@ -1,153 +1,98 @@
 # azhyphen
 
-`azhyphen` provides standalone Azerbaijani hyphenation for LuaLaTeX and XeLaTeX.
-It does not require Babel or Polyglossia.
+<!-- AZHYPHEN-BADGES:START -->
+![Version](https://img.shields.io/badge/version-0.1.0--development-blue)
+![License](https://img.shields.io/badge/license-LPPL%201.3c%2B-blue)
+![LuaLaTeX](https://img.shields.io/badge/LuaLaTeX-supported-2ea44f)
+![XeLaTeX](https://img.shields.io/badge/XeLaTeX-supported-2ea44f)
+![Status](https://img.shields.io/badge/status-active%20development-orange)
+<!-- AZHYPHEN-BADGES:END -->
+
+Standalone Azerbaijani hyphenation for LuaLaTeX and XeLaTeX. It does not
+require Babel, Polyglossia, or document-level language configuration.
+
+## Usage
 
 ```tex
 \documentclass{article}
 \usepackage{azhyphen}
 
 \begin{document}
-Azərbaycan dilində mətn burada yazılır.
+Azərbaycan dilində mətn avtomatik olaraq hecalanır.
 \end{document}
 ```
 
-Loading the package activates Azerbaijani hyphenation globally.
+Compile with LuaLaTeX or XeLaTeX. pdfLaTeX is not currently supported.
+Loading the package activates Azerbaijani hyphenation globally. XeLaTeX also
+sets Azerbaijani case mappings, including the distinct `i`/`İ` and `ı`/`I`
+pairs. Automatic switching between languages is outside this package's scope.
 
-Supported engines:
+## Current status
 
-- LuaLaTeX
-- XeLaTeX
+<!-- AZHYPHEN-STATS:START -->
+The current pattern set is trained and evaluated on manually annotated
+Azerbaijani words. Evaluation uses a held-out set not used for training.
 
-pdfLaTeX is not currently supported.
+| Metric | Current |
+|---|---:|
+| Training annotations | 2,000 |
+| Evaluation annotations | 262 |
+| Patterns | 291 |
+| Exact word accuracy | 64.9% |
+| Break precision | 88.9% |
+| Break recall | 92.7% |
+| Break F1 | 90.8% |
+| Correct breakpoints | 594 |
+| Wrong breakpoints | 74 |
+| Missed breakpoints | 47 |
+<!-- AZHYPHEN-STATS:END -->
 
-## Status
+These figures describe the synchronized experimental model, not complete
+linguistic coverage. The current left and right hyphenation minima are both 2
+and remain subject to linguistic and typographic review.
 
-The runtime, synchronization workflow, installation rules, and integration tests
-are implemented. A real production pattern file is intentionally not fabricated
-by this repository: synchronize the external PATGEN output before normal use,
-installation, or validation with real patterns. The longer-term goal is a CTAN
-and TeX Live release after the pattern data and linguistic choices have been
-reviewed.
+## Project status
 
-The current left and right hyphenation minima are both **2**. This conservative
-default is applied by both engine backends and awaits linguistic review.
+azhyphen is under active development and is already usable with LuaLaTeX and
+XeLaTeX. The Azerbaijani pattern set continues to grow and be evaluated.
+Releases in the `0.x` series are development releases, so model statistics and
+linguistic behavior may change between them. Version `1.0.0` will mark the
+first stable release after the pattern set, package behavior, and regression
+coverage are sufficiently mature. Current linguistic quality is reported
+separately above.
 
-## Development and installation
+## Installation
 
-For a local checkout, make the package visible to LuaLaTeX with:
-
-```sh
-export TEXINPUTS="$PWD/tex/latex/azhyphen//:"
-lualatex document.tex
-```
-
-Configure the external PATGEN output in the ignored developer-local `local.mk`:
-
-```make
-PATTERNS := ../localization/path/to/generated/patterns.txt
-```
-
-Then synchronize the validated runtime snapshot and deterministic metadata:
-
-```sh
-make sync
-```
-
-An explicit override works without `local.mk`:
-
-```sh
-make sync PATTERNS=/path/to/patterns.txt
-```
-
-Synchronization validates raw UTF-8 PATGEN input, avoids rewriting unchanged
-data, atomically replaces changed data, and deterministically generates
-`azhyphen-data.json` plus the mechanically derived `azhyphen-xetex.tex` loader.
-The canonical linguistic pattern dataset remains `azhyphen.pat.txt`; the XeTeX
-loader is checked against it and is never a second source of truth. No generated
-file contains the configured source path. `make import` remains an alias for
-`make sync`.
-
-The normal complete developer workflow is:
-
-```sh
-make update
-```
-
-It synchronizes data, validates metadata and the XeTeX loader, runs LuaLaTeX and
-XeLaTeX fixture and real-pattern tests, performs an isolated installation smoke
-test, and checks repository consistency. It does not commit, tag, push, change
-the package version, or create a release.
-
-Install only the runtime files into the `TEXMFHOME` reported by `kpsewhich`:
+From the repository checkout, run:
 
 ```sh
 make install
 ```
 
-For LuaLaTeX, `azhyphen` loads the canonical PATGEN data dynamically through
-LuaTeX. For XeLaTeX, this one-time installation step adds the marked `azhyphen`
-entry to the user's TeX language configuration, generates a user-level
-`language.dat`, and rebuilds only the user `xelatex` format. It never modifies
-`TEXMFDIST`, uses `sudo`, or requires root access. Re-running installation is
-safe and refreshes the format after pattern updates.
+Installation requires a POSIX shell, GNU Make, Python 3.10 or newer, and a
+working TeX Live installation with `lualatex`, `xelatex`, `kpsewhich`, `tlmgr`,
+`fmtutil-user`, `iftex`, and `luaotfload`. Both engines must be available for
+the installation verification. CI targets TeX Live 2026 on Ubuntu; other
+distributions and native Windows installation have not been verified.
 
-`make uninstall` removes only azhyphen-owned runtime files and registration,
-preserves unrelated user language entries, and rebuilds the affected user
-format. Repeated uninstallation is safe.
+This installs azhyphen in your user `TEXMFHOME` and requires no root access.
+The same step performs XeLaTeX's one-time user-level language registration.
+Re-running installation is safe. Run `make uninstall` to remove only
+azhyphen-owned files and registration.
+XeLaTeX registration rebuilds your user format. If TeX Live reports an unrelated
+missing language loader, repair that TeX installation and retry; production
+installation does not replace missing loaders with test stubs.
 
-## Testing
+## Development
 
-```sh
-make test
-```
-
-`make test` runs both `make test-lua` and `make test-xe`. The fixture/runtime
-tests build temporary TEXMF trees and install the deliberately simple
-`tests/fixtures/sample-patterns.txt` there as `azhyphen.pat.txt`. They verify
-that each engine selects azhyphen's language and inserts an actual discretionary
-hyphen from azhyphen-owned data. The fixture is test-only and is never copied
-into the source package tree.
-
-`make test-real` separately confirms that the bundled real snapshot is accepted
-and used by both engines, including `\showhyphens` over representative
-Azerbaijani words. It deliberately does not hardcode linguistic breakpoints,
-because those belong to the external pattern project's authoritative evaluation
-suite.
-
-`make test-sync` exercises changed, unchanged, empty, invalid, and failure-safe
-synchronization behavior without touching production data. `make check` verifies
-the imported data and repository consistency.
-
-XeLaTeX format creation necessarily processes every language advertised by the
-installed TeX Live database. For isolated CI on a partial TeX Live installation
-whose database names unrelated loaders that are not actually installed, the
-test harness supplies neutral stubs for those missing unrelated loaders inside
-the temporary TEXMF tree only. Production `make install` remains strict and
-reports such an inconsistent TeX Live installation instead of dropping or
-altering another language.
-
-## Architecture and layout
-
-- `tex/latex/azhyphen/` contains the LaTeX front end, Lua runtime, optional
-  exception file, and (after synchronization) generated runtime patterns and
-  metadata.
-- `scripts/import_patterns.py` is the development-time synchronization bridge;
-  `scripts/check_repository.py` validates data and repository consistency.
-- `tests/` contains LuaLaTeX integration documents and test-only data.
-
-The Lua backend finds data through kpathsea, creates one cached LuaTeX language
-object, loads native patterns and optional exceptions, configures Azerbaijani
-hyphenation character mappings, and globally selects the resulting language.
-The XeTeX backend selects the named `\l@azhyphen` language embedded in the user
-XeLaTeX format from the same synchronized pattern snapshot.
-PATGEN source, training corpora, and evaluation data remain maintained outside
-this repository. `azhyphen` stores only a validated runtime snapshot and its
-reproducible public metadata. Generated pattern and metadata files must never be
-edited manually, and updating them does not by itself constitute a package
-release.
+The linguistic data, PATGEN experiments, and authoritative model statistics
+are maintained separately. This repository contains their validated runtime
+snapshot and selected public statistics. See [DEVELOPMENT.md](DEVELOPMENT.md)
+for synchronization, testing, versioning, and release details.
+The origin and licensing of the bundled data are documented in
+[docs/PROVENANCE.md](docs/PROVENANCE.md).
 
 ## License
 
-The maintained package is released under the LaTeX Project Public License 1.3c
-or later. See `LICENSE`.
+azhyphen is released under the LaTeX Project Public License 1.3c or later. See
+[LICENSE](LICENSE).

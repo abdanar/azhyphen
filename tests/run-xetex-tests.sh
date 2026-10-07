@@ -15,9 +15,15 @@ mkdir -p "$tmp/out" "$tmp/repository"
 sh "$root/tests/prepare-isolated-xetex.sh" "$tmp/home"
 
 if test "$mode" = fixture; then
-  cp -R "$root/." "$tmp/repository"
+  # Copy only inputs needed by installation and fixture validation.
+  cp -R "$root/scripts" "$root/tests" "$root/tex" "$root/docs" "$tmp/repository/"
+  cp "$root/Makefile" "$root/README.md" "$root/VERSION" "$root/CITATION.cff" "$tmp/repository/"
   python3 "$tmp/repository/scripts/import_patterns.py" \
     "$tmp/repository/tests/fixtures/sample-patterns.txt" --quiet
+  python3 "$tmp/repository/scripts/update_readme_stats.py" \
+    --stats "$tmp/repository/tests/fixtures/sample-stats.json" \
+    --patterns "$tmp/repository/tex/latex/azhyphen/azhyphen.pat.txt" \
+    --output-stats "$tmp/repository/docs/model-stats.json" --quiet
   repository=$tmp/repository
 else
   test -s "$root/tex/latex/azhyphen/azhyphen.pat.txt" || {

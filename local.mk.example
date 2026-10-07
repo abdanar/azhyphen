@@ -1,2 +1,3 @@
-# Copy this file to local.mk and adjust the developer-local source path.
-PATTERNS := ../localization/path/to/generated/patterns.txt
+# Copy this file to local.mk and adjust the developer-local source paths.
+PATTERNS := ../localization/experiments/patterns.pat
+STATS := ../localization/experiments/public-stats.json

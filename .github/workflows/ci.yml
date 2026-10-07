@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install TeX Live 2026
+        uses: zauguin/install-texlive@f5e7d0b117035fff797d4392ea94131747e03d60 # v4
+        with:
+          texlive_version: 2026
+          packages: >-
+            scheme-basic
+            iftex
+            luaotfload
+            luatex
+            xetex
+
+      - name: Validate synchronized state
+        run: make validate-state
+
+      - name: Test synchronization tooling
+        run: make test-sync
+
+      - name: Test LuaLaTeX and XeLaTeX
+        run: make test
+
+      - name: Test bundled patterns
+        run: make test-real
+
+      - name: Test installation
+        run: make install-smoke
+
+      - name: Check repository consistency
+        run: make check

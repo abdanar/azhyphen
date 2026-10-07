@@ -2,7 +2,6 @@
 """Synchronize a UTF-8 PATGEN snapshot and its reproducible metadata."""
 
 from __future__ import annotations
-
 import argparse
 from dataclasses import dataclass
 import hashlib
@@ -14,7 +13,6 @@ import sys
 import tempfile
 from typing import Any
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_DIRECTORY = REPOSITORY_ROOT / "tex" / "latex" / "azhyphen"
 DESTINATION = PACKAGE_DIRECTORY / "azhyphen.pat.txt"
@@ -22,13 +20,32 @@ METADATA_DESTINATION = PACKAGE_DIRECTORY / "azhyphen-data.json"
 XETEX_LOADER_DESTINATION = PACKAGE_DIRECTORY / "azhyphen-xetex.tex"
 EXCEPTIONS_SOURCE = PACKAGE_DIRECTORY / "azhyphen.hyp.txt"
 
-
 class PatternError(ValueError):
     """Raised when input is not plausible raw PATGEN pattern data."""
 
-
 @dataclass(frozen=True)
 class PatternData:
+    """Validated representation of a PATGEN pattern snapshot.
+
+    Parameters
+    ----------
+    raw : bytes
+        Original pattern-file contents preserved byte-for-byte.
+    tokens : tuple[str, ...]
+        Parsed PATGEN pattern tokens after comments and surrounding
+        whitespace have been removed.
+    pattern_count : int
+        Number of parsed PATGEN pattern tokens.
+    line_count : int
+        Number of lines in the decoded input file.
+    sha256 : str
+        SHA-256 digest of the original pattern-file bytes.
+
+    Notes
+    -----
+    Instances are immutable so that all derived properties continue to
+    describe the same validated pattern snapshot.
+    """
     raw: bytes
     tokens: tuple[str, ...]
     pattern_count: int
@@ -45,47 +62,65 @@ class PatternData:
             "sha256": self.sha256,
         }
 
-
 def analyze_pattern_bytes(raw: bytes, *, label: str = "pattern data") -> PatternData:
+    """Validate and analyze raw UTF-8 PATGEN pattern data.
+
+    The input is interpreted as plain PATGEN pattern output rather than as
+    a TeX wrapper. TeX-style comments beginning with ``%`` are ignored while
+    parsing tokens, but the original input bytes are preserved unchanged for
+    synchronization and hashing. Each pattern token must contain at least one
+    ASCII decimal weight. TeX wrapper syntax such as backslashes or braces is
+    rejected.
+
+    Parameters
+    ----------
+    raw : bytes
+        Original contents of the PATGEN pattern file.
+    label : str, optional
+        Human-readable description of the input used in validation error
+        messages. The default is ``"pattern data"``.
+
+    Returns
+    -------
+    PatternData
+        Validated pattern data containing the original bytes, parsed tokens,
+        counts, and SHA-256 digest.
+
+    Raises
+    ------
+    PatternError
+        If the input is empty, is not valid UTF-8, contains a NUL character,
+        contains no patterns, contains TeX wrapper syntax, or contains a token
+        without an ASCII PATGEN weight.
+
+    Notes
+    -----
+    A UTF-8 byte-order mark is ignored during parsing but remains part of
+    ``PatternData.raw`` and therefore contributes to the SHA-256 digest.
+    """
     if not raw:
         raise PatternError(f"{label} is empty")
     try:
         text = raw.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise PatternError(f"{label} is not valid UTF-8: {exc}") from exc
-
     if text.startswith("\ufeff"):
         text = text[1:]
     if "\x00" in text:
         raise PatternError(f"{label} contains a NUL byte")
-
     uncommented = "\n".join(line.split("%", 1)[0] for line in text.splitlines())
     tokens = uncommented.split()
     if not tokens:
         raise PatternError(f"{label} contains no patterns")
-
     for token in tokens:
         if any(character in token for character in "\\{}"):
-            raise PatternError(
-                f"{label} is not raw PATGEN data (found TeX wrapper syntax)"
-            )
-        if not any(
-            character.isdecimal() and character.isascii() for character in token
-        ):
-            raise PatternError(
-                f"{label} contains a token without a PATGEN weight: {token[:80]}"
-            )
-
-    return PatternData(
-        raw=raw,
-        tokens=tuple(tokens),
-        pattern_count=len(tokens),
-        line_count=len(text.splitlines()),
-        sha256=hashlib.sha256(raw).hexdigest(),
-    )
-
+            raise PatternError(f"{label} is not raw PATGEN data (found TeX wrapper syntax)")
+        if not any(character.isdecimal() and character.isascii() for character in token):
+            raise PatternError(f"{label} contains a token without a PATGEN weight: {token[:80]}")
+    return PatternData(raw=raw, tokens=tuple(tokens), pattern_count=len(tokens), line_count=len(text.splitlines()), sha256=hashlib.sha256(raw).hexdigest())
 
 def read_pattern_file(path: Path, *, label: str) -> PatternData:
+    """Read, validate, and analyze a PATGEN pattern file."""
     if not path.exists():
         raise PatternError(f"{label} does not exist")
     if not path.is_file():
@@ -96,10 +131,35 @@ def read_pattern_file(path: Path, *, label: str) -> PatternData:
         raise PatternError(f"cannot read {label}: {exc}") from exc
     return analyze_pattern_bytes(raw, label=label)
 
-
 def xetex_loader_bytes(data: PatternData) -> bytes:
-    pattern_body = ("\n".join(data.tokens) + "\n").encode("utf-8")
+    """Generate the deterministic XeTeX loader for a pattern snapshot.
 
+    The loader is generated from the canonical PATGEN pattern tokens and,
+    when present, the bundled ``azhyphen.hyp.txt`` exception data. Patterns
+    and exceptions are normalized to one token per line in the generated
+    loader.
+
+    Parameters
+    ----------
+    data : PatternData
+        Validated canonical PATGEN pattern data.
+
+    Returns
+    -------
+    bytes
+        UTF-8 encoded XeTeX loader contents.
+
+    Raises
+    ------
+    PatternError
+        If the exception file exists but is not valid UTF-8.
+
+    Notes
+    -----
+    The returned loader is a deterministic derivative of the canonical
+    pattern data and is not an independent linguistic data source.
+    """
+    pattern_body = ("\n".join(data.tokens) + "\n").encode("utf-8")
     exceptions = EXCEPTIONS_SOURCE.read_bytes() if EXCEPTIONS_SOURCE.is_file() else b""
     try:
         exception_text = exceptions.decode("utf-8")
@@ -107,12 +167,8 @@ def xetex_loader_bytes(data: PatternData) -> bytes:
         raise PatternError(f"exception data is not valid UTF-8: {exc}") from exc
     if exception_text.startswith("\ufeff"):
         exception_text = exception_text[1:]
-        exceptions = exceptions[3:]
-    meaningful_exceptions = "\n".join(
-        line.split("%", 1)[0] for line in exception_text.splitlines()
-    ).split()
+    meaningful_exceptions = "\n".join(line.split("%", 1)[0] for line in exception_text.splitlines()).split()
     exception_body = ("\n".join(meaningful_exceptions) + "\n").encode("utf-8")
-
     parts = [
         b"% Generated by scripts/import_patterns.py; do not edit.\n",
         f"% Canonical pattern SHA-256: {data.sha256}\n".encode("ascii"),
@@ -127,22 +183,62 @@ def xetex_loader_bytes(data: PatternData) -> bytes:
     parts.extend((b"\\endgroup\n", b"\\endinput\n"))
     return b"".join(parts)
 
-
 def metadata_bytes(data: PatternData) -> bytes:
+    """Generate deterministic JSON metadata for a pattern snapshot.
+
+    Parameters
+    ----------
+    data : PatternData
+        Validated canonical PATGEN pattern data.
+
+    Returns
+    -------
+    bytes
+        UTF-8 encoded JSON metadata terminated by a newline.
+
+    Notes
+    -----
+    In addition to the pattern metadata, the output records the SHA-256
+    digest of the deterministically generated XeTeX loader.
+    """
     metadata = dict(data.metadata)
-    metadata["xetex_loader_sha256"] = hashlib.sha256(
-        xetex_loader_bytes(data)
-    ).hexdigest()
+    metadata["xetex_loader_sha256"] = hashlib.sha256(xetex_loader_bytes(data)).hexdigest()
     return (json.dumps(metadata, indent=2, sort_keys=True) + "\n").encode("utf-8")
 
+def prepare_temporary(destination: Path, contents: bytes) -> Path:
+    """Create and durably write a temporary replacement file.
 
-def _prepare_temporary(destination: Path, contents: bytes) -> Path:
+    The temporary file is created in the destination directory so that it
+    can later be installed with ``os.replace`` on the same filesystem.
+
+    Parameters
+    ----------
+    destination : pathlib.Path
+        Final destination whose parent directory will contain the temporary
+        file.
+    contents : bytes
+        Bytes to write to the temporary file.
+
+    Returns
+    -------
+    pathlib.Path
+        Path to the fully written temporary file.
+
+    Raises
+    ------
+    OSError
+        If the destination directory cannot be created or the temporary file
+        cannot be created, written, flushed, synchronized, or assigned the
+        expected permissions.
+
+    Notes
+    -----
+    The file is flushed and passed through ``os.fsync`` before being returned.
+    If writing fails, the temporary file is removed before the exception is
+    propagated.
+    """
     destination.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(
-        dir=destination.parent,
-        prefix=f".{destination.name}.",
-        suffix=".tmp",
-    )
+    descriptor, temporary_name = tempfile.mkstemp(dir=destination.parent, prefix=f".{destination.name}.", suffix=".tmp")
     temporary = Path(temporary_name)
     try:
         with os.fdopen(descriptor, "wb") as handle:
@@ -155,21 +251,70 @@ def _prepare_temporary(destination: Path, contents: bytes) -> Path:
         raise
     return temporary
 
-
-def _restore_file(destination: Path, previous: bytes | None, mode: int | None) -> None:
+def restore_file(destination: Path, previous: bytes | None, mode: int | None):
+    """Restore a destination file to its state before synchronization."""
     if previous is None:
         destination.unlink(missing_ok=True)
         return
-    temporary = _prepare_temporary(destination, previous)
-    if mode is not None:
-        temporary.chmod(mode)
-    os.replace(temporary, destination)
-
+    temporary = prepare_temporary(destination, previous)
+    try:
+        if mode is not None:
+            temporary.chmod(mode)
+        os.replace(temporary, destination)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 def synchronize(source: Path) -> dict[str, Any]:
+    """Synchronize a PATGEN snapshot with the azhyphen runtime data.
+
+    The source is fully validated before repository files are modified.
+    Deterministic metadata and the XeTeX loader are then generated from the
+    new pattern data and compared with their currently bundled versions.
+
+    Only files whose contents differ are replaced. Replacement files are
+    prepared in the destination directory and installed using ``os.replace``.
+    If a failure occurs after derived files have been replaced, the function
+    attempts to restore their previous contents and permissions.
+
+    Parameters
+    ----------
+    source : pathlib.Path
+        Path to the external raw PATGEN pattern file.
+
+    Returns
+    -------
+    dict[str, Any]
+        Synchronization report containing:
+
+        ``status``
+            Whether the canonical pattern file was updated.
+        ``old_patterns``
+            Pattern count in the previously bundled data, or zero if no
+            valid previous pattern data existed.
+        ``new_patterns``
+            Pattern count in the synchronized source.
+        ``sha256``
+            SHA-256 digest of the synchronized source bytes.
+        ``metadata_status``
+            Whether the generated metadata was updated.
+        ``xetex_loader_status``
+            Whether the generated XeTeX loader was updated.
+
+    Raises
+    ------
+    PatternError
+        If the source pattern data or bundled exception data is invalid.
+    OSError
+        If repository files cannot be read, prepared, replaced, or restored.
+
+    Notes
+    -----
+    The canonical pattern file is preserved byte-for-byte from the supplied
+    source. Generated metadata and the XeTeX loader are deterministic
+    derivatives of that canonical snapshot.
+    """
     source = source.expanduser().resolve()
     source_data = read_pattern_file(source, label="configured pattern source")
-
     old_data: PatternData | None = None
     old_raw: bytes | None = None
     if DESTINATION.exists():
@@ -178,21 +323,13 @@ def synchronize(source: Path) -> dict[str, Any]:
             old_data = analyze_pattern_bytes(old_raw, label="bundled pattern file")
         except PatternError:
             old_data = None
-
     desired_loader = xetex_loader_bytes(source_data)
     desired_metadata = metadata_bytes(source_data)
-    old_metadata = (
-        METADATA_DESTINATION.read_bytes() if METADATA_DESTINATION.exists() else None
-    )
-    old_loader = (
-        XETEX_LOADER_DESTINATION.read_bytes()
-        if XETEX_LOADER_DESTINATION.exists()
-        else None
-    )
+    old_metadata = (METADATA_DESTINATION.read_bytes() if METADATA_DESTINATION.exists() else None)
+    old_loader = (XETEX_LOADER_DESTINATION.read_bytes() if XETEX_LOADER_DESTINATION.exists() else None)
     pattern_changed = old_raw != source_data.raw
     metadata_changed = old_metadata != desired_metadata
     loader_changed = old_loader != desired_loader
-
     changes = (
         (XETEX_LOADER_DESTINATION, desired_loader, old_loader, loader_changed),
         (METADATA_DESTINATION, desired_metadata, old_metadata, metadata_changed),
@@ -202,38 +339,31 @@ def synchronize(source: Path) -> dict[str, Any]:
     pattern_temporary: Path | None = None
     try:
         if pattern_changed:
-            pattern_temporary = _prepare_temporary(DESTINATION, source_data.raw)
+            pattern_temporary = prepare_temporary(DESTINATION, source_data.raw)
         for destination, desired, _, changed in changes:
             if changed:
-                prepared[destination] = _prepare_temporary(destination, desired)
-
+                prepared[destination] = prepare_temporary(destination, desired)
         for destination, _, previous, changed in changes:
             if not changed:
                 continue
-            previous_mode = (
-                stat.S_IMODE(destination.stat().st_mode)
-                if destination.exists()
-                else None
-            )
+            previous_mode = (stat.S_IMODE(destination.stat().st_mode) if destination.exists() else None)
             temporary = prepared[destination]
             os.replace(temporary, destination)
             prepared.pop(destination)
             replaced.append((destination, previous, previous_mode))
-
         if pattern_changed:
             assert pattern_temporary is not None
             os.replace(pattern_temporary, DESTINATION)
             pattern_temporary = None
     except BaseException:
         for destination, previous, mode in reversed(replaced):
-            _restore_file(destination, previous, mode)
+            restore_file(destination, previous, mode)
         raise
     finally:
         if pattern_temporary is not None:
             pattern_temporary.unlink(missing_ok=True)
         for temporary in prepared.values():
             temporary.unlink(missing_ok=True)
-
     return {
         "metadata_status": "updated" if metadata_changed else "already up to date",
         "xetex_loader_status": "updated" if loader_changed else "already up to date",
@@ -243,52 +373,68 @@ def synchronize(source: Path) -> dict[str, Any]:
         "status": "updated" if pattern_changed else "already up to date",
     }
 
-
-def print_report(report: dict[str, Any], *, update: bool = False) -> None:
-    print("azhyphen update" if update else "azhyphen pattern synchronization")
-    print()
-    print("Pattern source: configured")
-    print(f"Status:         {report['status']}")
-    print(f"Old patterns:   {report['old_patterns']}")
-    print(f"New patterns:   {report['new_patterns']}")
-    print(f"SHA-256:        {report['sha256']}")
-    if report["metadata_status"] != "already up to date":
-        print(f"Metadata:       {report['metadata_status']}")
-    if report.get("xetex_loader_status") != "already up to date":
-        print(f"XeTeX loader:   {report['xetex_loader_status']}")
-
-
-def write_report(path: Path, report: dict[str, Any]) -> None:
-    temporary = _prepare_temporary(
-        path, (json.dumps(report, sort_keys=True) + "\n").encode("utf-8")
+def print_report(report: dict[str, Any], *, update: bool = False):
+    """Print a human-readable synchronization report."""
+    title = "azhyphen update" if update else "azhyphen pattern synchronization"
+    fields = [("Pattern source", "configured"), ("Status", report["status"]), ("Old patterns", report["old_patterns"]),
+              ("New patterns", report["new_patterns"]), ("SHA-256", report["sha256"])]
+    output_fields = (
+        ("Metadata", "metadata_status"),
+        ("XeTeX loader", "xetex_loader_status"),
+        ("Public stats", "stats_status"),
+        ("README stats", "readme_status"),
     )
+    for label, key in output_fields:
+        if key in report and (update or report[key] != "already up to date"):
+            fields.append((label, report[key]))
+    if "result" in report:
+        fields.append(("Result", report["result"]))
+    width = max(len(label) for label, _ in fields)
+    lines = [title, ""]
+    lines.extend(f"{label + ':':<{width + 2}}{value}" for label, value in fields)
+    print("\n".join(lines))
+
+def write_report(path: Path, report: dict[str, Any]):
+    """Write a synchronization report atomically as JSON."""
+    temporary = prepare_temporary(path, (json.dumps(report, sort_keys=True) + "\n").encode("utf-8"))
     try:
         os.replace(temporary, path)
     finally:
         temporary.unlink(missing_ok=True)
 
-
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Synchronize PATGEN data and deterministic azhyphen metadata."
-    )
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(description="Synchronize PATGEN data and deterministic azhyphen metadata.")
     parser.add_argument("source", nargs="?", type=Path, help="UTF-8 PATGEN output")
     parser.add_argument("--report", type=Path, help="write a private update report")
-    parser.add_argument(
-        "--print-report", type=Path, help="print a previously written update report"
-    )
+    parser.add_argument("--print-report", type=Path, help="print a previously written update report")
     parser.add_argument("--quiet", action="store_true", help="suppress sync summary")
     return parser.parse_args()
 
-
 def main() -> int:
+    """Run the pattern-synchronization command-line interface.
+
+    Returns
+    -------
+    int
+        Process exit status.
+
+        ``0``
+            Synchronization or report display completed successfully.
+        ``1``
+            A filesystem, JSON, or PATGEN validation error occurred.
+        ``2``
+            The command-line arguments represent invalid usage.
+
+    Notes
+    -----
+    ``--print-report`` operates independently of synchronization and therefore
+    cannot be combined with a source path or ``--report``.
+    """
     args = parse_args()
     if args.print_report is not None:
         if args.source is not None or args.report is not None:
-            print(
-                "error: --print-report cannot be combined with synchronization",
-                file=sys.stderr,
-            )
+            print("error: --print-report cannot be combined with synchronization", file=sys.stderr)
             return 2
         try:
             report = json.loads(args.print_report.read_text(encoding="utf-8"))
@@ -297,7 +443,6 @@ def main() -> int:
             return 1
         print_report(report, update=True)
         return 0
-
     if args.source is None:
         print("error: a pattern source path is required", file=sys.stderr)
         return 2
@@ -308,11 +453,9 @@ def main() -> int:
     except (OSError, PatternError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
-
     if not args.quiet:
         print_report(report)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

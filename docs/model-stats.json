@@ -1,0 +1,12 @@
+{
+  "training_count": 2000,
+  "evaluation_count": 262,
+  "pattern_count": 291,
+  "exact_accuracy": 64.89,
+  "precision": 88.92,
+  "recall": 92.67,
+  "f1": 90.76,
+  "correct_breakpoints": 594,
+  "wrong_breakpoints": 74,
+  "missed_breakpoints": 47
+}

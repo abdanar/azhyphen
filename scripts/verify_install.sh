@@ -21,5 +21,5 @@ run_engine() {
 }
 
 run_engine "${LUALATEX:-lualatex}" "$tmp/lua" "$tmp/cache"
-run_engine "${XELATEX:-xelatex}" "$tmp/xe" "${TEXMFVAR:-$tmp/cache}"
+run_engine "${XELATEX:-xelatex}" "$tmp/xe" "${TEXMFVAR:-$(kpsewhich -var-value=TEXMFVAR)}"
 echo "installed LuaLaTeX and XeLaTeX package verification passed"

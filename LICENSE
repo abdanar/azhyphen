@@ -1,19 +1,28 @@
-The azhyphen package is distributed under the LaTeX Project Public License,
-version 1.3c or (at your option) any later version.
+The `azhyphen` package is distributed under the LaTeX Project Public License,
+version 1.3c or, at your option, any later version. The full license text is
+included in `LPPL-1.3c.txt` and available at
+https://www.latex-project.org/lppl/lppl-1-3c.txt.
 
-The license text is available at
-https://www.latex-project.org/lppl/lppl-1-3c.txt and is included in TeX Live
-as `lppl1.3c.txt`.
+This work has the LPPL maintenance status **maintained**. The Current
+Maintainer is **Anar Abdullayev**.
+Error reports are accepted through this project's GitHub issue tracker.
 
-The package has the LPPL maintenance status "maintained". The Current
-Maintainer is the azhyphen project maintainer. The maintained files are all
-files in this repository except imported pattern data whose notices state
-otherwise. In particular, the maintained runtime files are:
+Unless a file contains a separate copyright or license notice, all files in
+this repository form part of the maintained work, including the package
+implementation, documentation, tests, generated metadata, XeTeX support files,
+and bundled Azerbaijani hyphenation pattern data.
 
-  tex/latex/azhyphen/azhyphen.sty
-  tex/latex/azhyphen/azhyphen.lua
-  tex/latex/azhyphen/azhyphen.hyp.txt
-  tex/latex/azhyphen/azhyphen-xetex.tex
+The principal runtime files are:
 
-Imported `azhyphen.pat.txt` data may carry an additional compatible copyright
-notice supplied by its source project.
+```text
+tex/latex/azhyphen/azhyphen.sty
+tex/latex/azhyphen/azhyphen.lua
+tex/latex/azhyphen/azhyphen-version.tex
+tex/latex/azhyphen/azhyphen.hyp.txt
+tex/latex/azhyphen/azhyphen-xetex.tex
+tex/latex/azhyphen/azhyphen.pat.txt
+```
+
+Generated files derived from the canonical pattern data are distributed as
+part of this work. If a file carries a separate compatible copyright or
+license notice, that notice applies to the affected file as stated there.

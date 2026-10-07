@@ -18,8 +18,8 @@ run_make install >/dev/null
 run_make install >/dev/null
 
 installed=$tmp/texmfhome/tex/latex/azhyphen
-for file in azhyphen.sty azhyphen.lua azhyphen.pat.txt azhyphen.hyp.txt \
-    azhyphen-xetex.tex; do
+for file in azhyphen.sty azhyphen.lua azhyphen-version.tex azhyphen.pat.txt \
+    azhyphen.hyp.txt azhyphen-xetex.tex; do
   test -f "$installed/$file" || {
     echo "error: installation smoke test did not install $file" >&2
     exit 1

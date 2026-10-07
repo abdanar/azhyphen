@@ -17,6 +17,17 @@
   \PackageError{azhyphen-test}{dotted I does not map to i}{}%
 \fi
 \makeatother
+\def\checkcase#1#2{%
+  \ifnum\lccode`#2=`#1\relax\else
+    \PackageError{azhyphen-test}{Incorrect lowercase mapping}{}%
+  \fi
+  \ifnum\uccode`#1=`#2\relax\else
+    \PackageError{azhyphen-test}{Incorrect uppercase mapping}{}%
+  \fi}
+\checkcase{ç}{Ç}\checkcase{ə}{Ə}\checkcase{ğ}{Ğ}\checkcase{i}{İ}%
+\checkcase{ı}{I}\checkcase{ö}{Ö}\checkcase{ş}{Ş}\checkcase{ü}{Ü}%
+\ifnum\lefthyphenmin=2\else\errmessage{Incorrect left minimum}\fi
+\ifnum\righthyphenmin=2\else\errmessage{Incorrect right minimum}\fi
 \showhyphens{fotoelektrik ellərarası addımölçən videobloger ətürpərdici}
 Azərbaycan dilində mətn burada yazılır.
 \end{document}

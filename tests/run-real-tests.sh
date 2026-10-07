@@ -16,6 +16,7 @@ tmp=$(mktemp -d "${TMPDIR:-/tmp}/azhyphen-real-test.XXXXXX")
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/texmf/tex/latex/azhyphen" "$tmp/cache" "$tmp/out"
 cp "$package_dir/azhyphen.sty" "$package_dir/azhyphen.lua" \
+   "$package_dir/azhyphen-version.tex" \
    "$package_dir/azhyphen.pat.txt" "$package_dir/azhyphen.hyp.txt" \
    "$tmp/texmf/tex/latex/azhyphen/"
 
@@ -35,4 +36,3 @@ run_lualatex() {
 run_lualatex "$root/tests/basic.tex"
 run_lualatex "$root/tests/real-patterns.tex"
 echo "real-pattern tests passed"
-

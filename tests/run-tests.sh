@@ -7,6 +7,8 @@ trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 
 mkdir -p "$tmp/repository/scripts" "$tmp/repository/tests/fixtures"
 mkdir -p "$tmp/texmf/tex/latex/azhyphen" "$tmp/tex-cache"
+# Exclude the developer's installed copy, including in missing-file tests.
+export TEXMFHOME="$tmp/texmf" TEXMFCONFIG="$tmp/config"
 mkdir -p "$tmp/out-fixture"
 
 # Test the importer in a throwaway repository-shaped directory. Its canonical
@@ -33,6 +35,7 @@ fi
 
 cp "$root/tex/latex/azhyphen/azhyphen.sty" \
    "$root/tex/latex/azhyphen/azhyphen.lua" \
+   "$root/tex/latex/azhyphen/azhyphen-version.tex" \
    "$root/tex/latex/azhyphen/azhyphen.hyp.txt" \
    "$tmp/texmf/tex/latex/azhyphen/"
 cp "$root/tests/fixtures/sample-patterns.txt" \

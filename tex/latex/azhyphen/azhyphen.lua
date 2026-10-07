@@ -1,4 +1,5 @@
 -- azhyphen.lua -- standalone Azerbaijani hyphenation for LuaTeX
+-- LPPL 1.3c or later; maintained by Anar Abdullayev. See LICENSE.
 
 local cached = package.loaded.azhyphen
 if type(cached) == "table" and type(cached.activate) == "function" then
