@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add a user manual and deterministic, allowlisted CTAN archive builds.
+- Add complete release validation, staged engine loading checks, and CI artifacts.
+
 ## [0.1.0] - 2026-10-02
 
 - Initial development release of standalone Azerbaijani hyphenation.

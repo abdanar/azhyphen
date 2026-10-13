@@ -6,6 +6,12 @@ PYTHON ?= python3
 LUALATEX ?= lualatex
 XELATEX ?= xelatex
 
+# MSYS2's POSIX tools must precede Windows commands with the same name
+# (notably find.exe). Leave the user's tool precedence unchanged on Unix.
+ifeq ($(OS),Windows_NT)
+export PATH := /usr/bin:$(PATH)
+endif
+
 -include local.mk
 
 # Paths
@@ -30,6 +36,7 @@ RUNTIME_OPTIONAL := $(PACKAGE_DIR)/azhyphen.hyp.txt
 .PHONY: \
 	help \
 	version check-version \
+	doc ctan release-check clean-dist \
 	sync import \
 	validate-state validate-data check \
 	test test-lua test-xe test-real test-sync install-smoke \
@@ -50,6 +57,10 @@ help:
 		'  make test-sync       Test synchronization and generated-file tooling' \
 		'  make validate-state  Validate synchronized generated state' \
 		'  make check           Check generated state and repository consistency' \
+		'  make doc             Compile the package manual in build/doc/' \
+		'  make ctan            Build and validate dist/azhyphen-<VERSION>.zip' \
+		'  make release-check   Run all tests and CTAN release validation' \
+		'  make clean-dist      Remove generated release archives' \
 		'  make install         Install and verify in the user TeX tree' \
 		'  make uninstall       Remove azhyphen from the user TeX tree' \
 		'  make clean           Remove generated test and TeX build artifacts' \
@@ -124,6 +135,28 @@ test-sync:
 	@$(PYTHON) tests/test_readme_stats.py
 	@$(PYTHON) tests/test_version.py
 	@$(PYTHON) tests/test_public_repository.py
+	@$(PYTHON) tests/test_ctan.py
+
+# Release construction never synchronizes data or modifies source files.
+doc: check-version validate-state
+	@$(PYTHON) scripts/build_ctan.py doc --lualatex "$(LUALATEX)"
+
+ctan: check
+	@$(PYTHON) scripts/build_ctan.py ctan --lualatex "$(LUALATEX)" --xelatex "$(XELATEX)"
+
+# Sequential recursive calls also avoid competing format builds under make -j.
+release-check:
+	@$(MAKE) --no-print-directory test-sync
+	@$(MAKE) --no-print-directory test
+	@$(MAKE) --no-print-directory test-real
+	@$(MAKE) --no-print-directory install-smoke
+	@$(MAKE) --no-print-directory ctan
+	@$(MAKE) --no-print-directory check
+	@git diff --check
+	@git diff --cached --check
+
+clean-dist:
+	@$(PYTHON) scripts/build_ctan.py clean-dist
 
 install-smoke: validate-state
 	@LUALATEX="$(LUALATEX)" XELATEX="$(XELATEX)" \
@@ -228,6 +261,7 @@ uninstall:
 # Cleanup
 
 clean:
+	@$(PYTHON) scripts/build_ctan.py clean
 	@set -eu; \
 	for input in tests/*.tex; do \
 		name="$${input##*/}"; name="$${name%.tex}"; \

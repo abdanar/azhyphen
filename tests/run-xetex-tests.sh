@@ -8,7 +8,8 @@ case $mode in
 esac
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-tmp=$(mktemp -d "${TMPDIR:-/tmp}/azhyphen-xetex-test.XXXXXX")
+. "$root/scripts/tex_environment.sh"
+tmp=$(tex_native_path "$(mktemp -d "${TMPDIR:-/tmp}/azhyphen-xetex-test.XXXXXX")")
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/home/tex/generic/config" "$tmp/var" "$tmp/config" "$tmp/cache"
 mkdir -p "$tmp/out" "$tmp/repository"

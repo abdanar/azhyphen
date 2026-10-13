@@ -1,16 +1,21 @@
 #!/bin/sh
 set -eu
 
-test_home=$1
-probe=$(mktemp -d "${TMPDIR:-/tmp}/azhyphen-language-probe.XXXXXX")
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+. "$root/scripts/tex_environment.sh"
+test_home=$(tex_native_path "$1")
+probe=$(tex_native_path "$(mktemp -d "${TMPDIR:-/tmp}/azhyphen-language-probe.XXXXXX")")
 trap 'rm -rf "$probe"' EXIT HUP INT TERM
 : >"$probe/language-local.dat"
-tlmgr generate language.dat --localcfg "$probe/language-local.dat" \
+tex_tlmgr generate language.dat --localcfg "$probe/language-local.dat" \
   --dest "$probe/language.dat" >/dev/null
 language_dat=$probe/language.dat
 missing=0
+carriage_return=$(printf '\r')
 
 while IFS= read -r line; do
+  # Native TeX Live may generate CRLF language.dat; filenames exclude the CR.
+  line=${line%"$carriage_return"}
   set -- $line
   test "$#" -ge 2 || continue
   language=$1

@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+      - ctan-workflow
+    tags:
+      - 'v*'
   pull_request:
 
 permissions:
@@ -31,6 +34,10 @@ jobs:
             luaotfload
             luatex
             xetex
+            fontspec
+            hyperref
+            geometry
+            cm-unicode
 
       - name: Validate synchronized state
         run: make validate-state
@@ -49,3 +56,23 @@ jobs:
 
       - name: Check repository consistency
         run: make check
+
+      - name: Validate release workflow
+        run: make release-check
+
+      - name: Verify repeatable CTAN archive
+        shell: bash
+        run: |
+          archive="dist/azhyphen-$(cat VERSION).zip"
+          before=$(sha256sum "$archive" | cut -d ' ' -f 1)
+          make clean-dist
+          make ctan
+          after=$(sha256sum "$archive" | cut -d ' ' -f 1)
+          test "$before" = "$after"
+
+      - name: Retain CTAN archive
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: azhyphen-ctan
+          path: dist/azhyphen-*.zip
+          if-no-files-found: error

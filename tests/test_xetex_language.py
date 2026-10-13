@@ -2,6 +2,7 @@
 """Test registration ownership and rollback without modifying a TeX installation."""
 
 from pathlib import Path
+import os
 import sys
 import tempfile
 from unittest.mock import patch
@@ -58,7 +59,10 @@ def main() -> int:
             registration.uninstall(home)
             registration.uninstall(home)
         assert language_dat.read_bytes() == original + b"later zerohyph.tex\n"
-        assert language_dat.stat().st_mode & 0o777 == 0o640
+        if os.name == "nt":
+            print("SKIP: POSIX mode 0640 assertion (Windows chmod has no POSIX permission semantics)")
+        else:
+            assert language_dat.stat().st_mode & 0o777 == 0o640
         assert not list(home.rglob("*.tmp"))
 
         # A registration owned by someone else must never be deleted.

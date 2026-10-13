@@ -91,6 +91,8 @@ def run_checked(command: list[str], environment: dict[str, str]) -> None:
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             env=environment,
         )
     except OSError as exc:

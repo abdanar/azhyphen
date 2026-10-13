@@ -2,7 +2,8 @@
 set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-tmp=$(mktemp -d "${TMPDIR:-/tmp}/azhyphen-test.XXXXXX")
+. "$root/scripts/tex_environment.sh"
+tmp=$(tex_native_path "$(mktemp -d "${TMPDIR:-/tmp}/azhyphen-test.XXXXXX")")
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 
 mkdir -p "$tmp/repository/scripts" "$tmp/repository/tests/fixtures"
@@ -45,7 +46,7 @@ run_lualatex() {
   output=$1
   input=$2
   if ! env TEXMFCACHE="$tmp/tex-cache" TEXMFVAR="$tmp/tex-cache" \
-      TEXINPUTS="$tmp/texmf//:" \
+      TEXINPUTS="$tmp/texmf//$tex_path_separator" \
       "${LUALATEX:-lualatex}" -interaction=nonstopmode -halt-on-error \
         -output-directory="$output" "$input" >"$output/console.txt" 2>&1; then
     echo "error: LuaLaTeX failed for $input" >&2
@@ -70,7 +71,7 @@ mkdir -p "$tmp/out-missing"
 mv "$tmp/texmf/tex/latex/azhyphen/azhyphen.pat.txt" \
    "$tmp/azhyphen.pat.txt.saved"
 if env TEXMFCACHE="$tmp/tex-cache" TEXMFVAR="$tmp/tex-cache" \
-    TEXINPUTS="$tmp/texmf//:" \
+    TEXINPUTS="$tmp/texmf//$tex_path_separator" \
     "${LUALATEX:-lualatex}" -interaction=nonstopmode -halt-on-error \
       -output-directory="$tmp/out-missing" "$root/tests/basic.tex" \
       >"$tmp/out-missing/console.txt" 2>&1; then
@@ -88,7 +89,7 @@ mkdir -p "$tmp/out-invalid"
 printf '\\patterns{not-raw-pattern-data' \
   >"$tmp/texmf/tex/latex/azhyphen/azhyphen.pat.txt"
 if env TEXMFCACHE="$tmp/tex-cache" TEXMFVAR="$tmp/tex-cache" \
-    TEXINPUTS="$tmp/texmf//:" \
+    TEXINPUTS="$tmp/texmf//$tex_path_separator" \
     "${LUALATEX:-lualatex}" -interaction=nonstopmode -halt-on-error \
       -output-directory="$tmp/out-invalid" "$root/tests/basic.tex" \
       >"$tmp/out-invalid/console.txt" 2>&1; then
@@ -104,7 +105,7 @@ mv "$tmp/azhyphen.pat.txt.saved" \
    "$tmp/texmf/tex/latex/azhyphen/azhyphen.pat.txt"
 
 if command -v pdflatex >/dev/null 2>&1; then
-  if env TEXINPUTS="$tmp/texmf//:" \
+  if env TEXINPUTS="$tmp/texmf//$tex_path_separator" \
       pdflatex -interaction=nonstopmode -halt-on-error \
         -output-directory="$tmp/out-fixture" "$root/tests/non-luatex.tex" \
         >"$tmp/out-fixture/non-luatex-console.txt" 2>&1; then

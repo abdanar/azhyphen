@@ -2,7 +2,8 @@
 set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-tmp=$(mktemp -d "${TMPDIR:-/tmp}/azhyphen-install-test.XXXXXX")
+. "$root/scripts/tex_environment.sh"
+tmp=$(tex_native_path "$(mktemp -d "${TMPDIR:-/tmp}/azhyphen-install-test.XXXXXX")")
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/texmfhome" "$tmp/cache" "$tmp/config" "$tmp/var" "$tmp/out"
 sh "$root/tests/prepare-isolated-xetex.sh" "$tmp/texmfhome"

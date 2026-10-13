@@ -72,8 +72,10 @@ make install
 Installation requires a POSIX shell, GNU Make, Python 3.10 or newer, and a
 working TeX Live installation with `lualatex`, `xelatex`, `kpsewhich`, `tlmgr`,
 `fmtutil-user`, `iftex`, and `luaotfload`. Both engines must be available for
-the installation verification. CI targets TeX Live 2026 on Ubuntu; other
-distributions and native Windows installation have not been verified.
+the installation verification. Installation is tested with TeX Live 2026
+on Ubuntu and native Windows with MSYS2. See
+[Windows development](DEVELOPMENT.md#windows-development) for toolchain
+configuration. Other TeX distributions have not been verified.
 
 This installs azhyphen in your user `TEXMFHOME` and requires no root access.
 The same step performs XeLaTeX's one-time user-level language registration.

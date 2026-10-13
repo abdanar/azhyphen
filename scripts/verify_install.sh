@@ -2,7 +2,8 @@
 set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-tmp=$(mktemp -d "${TMPDIR:-/tmp}/azhyphen-verify-install.XXXXXX")
+. "$root/scripts/tex_environment.sh"
+tmp=$(tex_native_path "$(mktemp -d "${TMPDIR:-/tmp}/azhyphen-verify-install.XXXXXX")")
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/cache" "$tmp/lua" "$tmp/xe"
 

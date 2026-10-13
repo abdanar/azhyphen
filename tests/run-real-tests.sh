@@ -2,6 +2,7 @@
 set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+. "$root/scripts/tex_environment.sh"
 package_dir=$root/tex/latex/azhyphen
 test -s "$package_dir/azhyphen.pat.txt" || {
   echo "error: real-pattern tests require an imported azhyphen.pat.txt" >&2
@@ -12,7 +13,7 @@ test -s "$package_dir/azhyphen-data.json" || {
   exit 1
 }
 
-tmp=$(mktemp -d "${TMPDIR:-/tmp}/azhyphen-real-test.XXXXXX")
+tmp=$(tex_native_path "$(mktemp -d "${TMPDIR:-/tmp}/azhyphen-real-test.XXXXXX")")
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/texmf/tex/latex/azhyphen" "$tmp/cache" "$tmp/out"
 cp "$package_dir/azhyphen.sty" "$package_dir/azhyphen.lua" \
@@ -24,7 +25,7 @@ run_lualatex() {
   input=$1
   name=$(basename "$input" .tex)
   if ! env TEXMFCACHE="$tmp/cache" TEXMFVAR="$tmp/cache" \
-      TEXINPUTS="$tmp/texmf//:" \
+      TEXINPUTS="$tmp/texmf//$tex_path_separator" \
       "${LUALATEX:-lualatex}" -interaction=nonstopmode -halt-on-error \
         -output-directory="$tmp/out" "$input" >"$tmp/out/$name.console" 2>&1; then
     echo "error: real-pattern LuaLaTeX test failed for $input" >&2

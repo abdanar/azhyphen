@@ -77,6 +77,8 @@ def project_files() -> list[Path]:
     files: list[Path] = []
     for path in REPOSITORY_ROOT.rglob("*"):
         relative = path.relative_to(REPOSITORY_ROOT)
+        if relative.parts[0] in {"build", "dist"}:
+            continue
         if ".git" in relative.parts or "__pycache__" in relative.parts:
             continue
         if path.name == "local.mk" or not path.is_file():
