@@ -117,7 +117,8 @@ def manual_bytes() -> bytes:
 def source_bytes(name: str) -> bytes:
     if name == "azhyphen-doc.tex":
         return manual_bytes()
-    contents = (ROOT / SOURCES[name]).read_bytes()
+    # Canonical distribution text must not depend on a checkout's CRLF bytes.
+    contents = (ROOT / SOURCES[name]).read_bytes().replace(b"\r\n", b"\n")
     if name == "README.md":
         # CTAN has no Makefile/maintenance tools. Keep generated badges/statistics intact.
         text = contents.decode("utf-8")

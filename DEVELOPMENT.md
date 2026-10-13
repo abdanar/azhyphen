@@ -122,7 +122,9 @@ The generated PDF need not be committed.
 `make ctan` starts clean staging in `build/ctan/azhyphen/`, copies an explicit
 allowlist, compiles the manual twice without shell escape, checks source and
 archive bytes, and loads the staged runtime in both engines in an isolated
-user tree. The archived README is adapted to the archive's manual installation
+user tree. Staged text uses canonical LF line endings, without modifying the
+working tree, so existing CRLF checkouts cannot change archive bytes.
+The archived README is adapted to the archive's manual installation
 instructions and flattened provenance path; its generated version/statistics
 blocks are preserved. No runtime file needs an independently maintained CTAN
 copy. Test-only stubs for missing unrelated language loaders stay outside the

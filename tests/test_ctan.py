@@ -167,6 +167,21 @@ class ReleaseTests(unittest.TestCase):
             ctan.smoke(self.stage, "unit-lualatex", "unit-xelatex")
         self.assertEqual(engines, ["unit-lualatex", "unit-xelatex"])
 
+    def test_crlf_checkout_cannot_change_distribution_bytes(self):
+        original = ctan.source_bytes("README.md")
+        with patch.object(ctan, "ROOT", self.work):
+            for name, relative in ctan.SOURCES.items():
+                if name == "azhyphen-doc.tex":
+                    continue
+                destination = self.work / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                canonical = (ROOT / relative).read_bytes().replace(b"\r\n", b"\n")
+                crlf = canonical.replace(b"\n", b"\r\n")
+                destination.write_bytes(crlf)
+                expected = original if name == "README.md" else canonical
+                self.assertEqual(ctan.source_bytes(name), expected, name)
+                self.assertEqual(destination.read_bytes(), crlf, name)
+
 
 if __name__ == "__main__":
     unittest.main()
