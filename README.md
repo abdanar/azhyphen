@@ -20,7 +20,7 @@ unsupported. XeLaTeX requires installation into its user format first.
 ## Status and quality
 
 <!-- AZHYPHEN-GENERATED:START -->
-Azhyphen **0.2.0** is currently a **development release**. Its hyphenation
+Azhyphen **0.2.1** is currently a **development release**. Its hyphenation
 patterns are generated reproducibly from the public annotated Azerbaijani
 dataset included in this repository.
 

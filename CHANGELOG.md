@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1] - 2026-10-14
+
+- Polish the user manual's usage, installation, contribution and quality explanations.
+- Clarify that reported quality describes the public evaluation set, not an
+  unbiased estimate for arbitrary unseen vocabulary.
+- No changes to runtime behavior, datasets, hyphenation patterns or quality metrics.
+
 ## [0.2.0] - 2026-10-14
 
 - Make azhyphen self-contained with canonical annotated Azerbaijani training
