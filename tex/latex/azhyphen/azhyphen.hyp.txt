@@ -1,3 +1,0 @@
-% Optional Azerbaijani hyphenation exceptions, one whitespace-separated word
-% per entry. This file is intentionally empty until reviewed exceptions exist.
-

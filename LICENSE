@@ -1,28 +1,55 @@
-The `azhyphen` package is distributed under the LaTeX Project Public License,
-version 1.3c or, at your option, any later version. The full license text is
-included in `LPPL-1.3c.txt` and available at
-https://www.latex-project.org/lppl/lppl-1-3c.txt.
+# Licenses and data provenance
 
-This work has the LPPL maintenance status **maintained**. The Current
-Maintainer is **Anar Abdullayev**.
-Error reports are accepted through this project's GitHub issue tracker.
+## Package: LPPL 1.3c or later
 
-Unless a file contains a separate copyright or license notice, all files in
-this repository form part of the maintained work, including the package
-implementation, documentation, tests, generated metadata, XeTeX support files,
-and bundled Azerbaijani hyphenation pattern data.
+Copyright Anar Abdullayev. The azhyphen software, TeX/Lua runtime, maintenance
+tool, tests, generated hyphenation patterns and package documentation are
+distributed under the LaTeX Project Public License version 1.3c or, at your
+option, any later version. Full terms: LPPL-1.3c.txt.
 
-The principal runtime files are:
+Maintenance status: maintained. Current Maintainer: Anar Abdullayev.
+Reports: https://github.com/abdanar/azhyphen/issues.
 
-```text
-tex/latex/azhyphen/azhyphen.sty
-tex/latex/azhyphen/azhyphen.lua
-tex/latex/azhyphen/azhyphen-version.tex
-tex/latex/azhyphen/azhyphen.hyp.txt
-tex/latex/azhyphen/azhyphen-xetex.tex
-tex/latex/azhyphen/azhyphen.pat.txt
-```
+The five runtime files are azhyphen.sty, azhyphen.lua, azhyphen.pat.txt,
+azhyphen-xetex.tex and azhyphen-version.tex. Derived patterns and metadata
+are part of the maintained package. No third-party pattern dataset is used.
 
-Generated files derived from the canonical pattern data are distributed as
-part of this work. If a file carries a separate compatible copyright or
-license notice, that notice applies to the affected file as stated there.
+## Word lists: CC0 1.0 Universal
+
+To the extent possible under law, Anar Abdullayev waives all copyright and
+related or neighboring rights in data/hyphenated.txt and data/evaluation.txt
+under CC0 1.0 Universal. These lists may be reused, corrected, extended and
+redistributed, including in other hyphenation projects. Full terms:
+CC0-1.0.txt and https://creativecommons.org/publicdomain/zero/1.0/.
+This separate grant was explicitly authorized by the maintainer on
+2026-10-13; it does not place the software or generated patterns under CC0.
+Future data contributions must be offered under the same CC0 terms.
+
+## Migration provenance
+
+The 2,270 annotations were migrated on 2026-10-13 from the maintainer's
+original annotation project: its current training list (2,007 words) became
+data/hyphenated.txt and its separate evaluation list (263 words) became
+data/evaluation.txt. Both lists match the original annotated gold data and
+the split used for the bundled model. Their order, characters and hyphen
+positions were preserved; only CRLF line endings were normalized if present.
+
+The original annotation application required human acceptance or editing
+before saving suggestions from the maintainer's rule engine. Its provenance
+records describe 2,211 accepted suggestions, 9 corrected suggestions and
+50 earlier manual annotations. Review of the source history, annotation
+workflow and these lists found no third-party annotation import or restrictive
+notice. Only the reusable annotated words were migrated: no unannotated
+dictionary, application, metadata, personal information, backups or history.
+The maintainer's express CC0 grant covers these annotations; no rights in
+other material from that project are asserted here.
+
+The previous exported patterns had an LPPL grant dated 2026-10-07. Their
+generator reused historical patterns as input, so that exact 291-pattern
+snapshot was not derivable from the word lists and final parameters alone.
+The self-contained generator preserves that recipe and annotations but
+starts from empty patterns, producing a fresh reproducible model. Current
+quality is measured solely from the public evaluation data and generated
+patterns, and displayed in README's generated block. The public datasets
+and this repository's Git history now provide the source history; building
+requires no external checkout, export, commit identifier or private path.

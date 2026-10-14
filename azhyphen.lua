@@ -29,13 +29,10 @@ local case_pairs = {
   { "x", "X" }, { "y", "Y" }, { "z", "Z" },
 }
 
-local function read_data_file(name, required)
+local function read_data_file(name)
   local path = kpse.find_file(name, "tex")
   if not path then
-    if required then
-      error("required pattern file " .. name .. " was not found by kpathsea", 0)
-    end
-    return nil
+    error("required pattern file " .. name .. " was not found by kpathsea", 0)
   end
 
   local handle, open_error = io.open(path, "rb")
@@ -53,10 +50,7 @@ local function read_data_file(name, required)
   data = data:gsub("^\239\187\191", "")
   data = data:gsub("%%[^\r\n]*", "")
   if not data:find("%S") then
-    if required then
-      error("required pattern file " .. path .. " is empty", 0)
-    end
-    return nil
+    error("required pattern file " .. path .. " is empty", 0)
   end
   return data, path
 end
@@ -98,8 +92,7 @@ local function initialize()
     return
   end
 
-  local patterns, pattern_path = read_data_file("azhyphen.pat.txt", true)
-  local exceptions = read_data_file("azhyphen.hyp.txt", false)
+  local patterns, pattern_path = read_data_file("azhyphen.pat.txt")
   validate_patterns(patterns, pattern_path)
 
   if not language_object then
@@ -116,16 +109,6 @@ local function initialize()
   local installed_patterns = lang.patterns(language_object)
   if type(installed_patterns) ~= "string" or not installed_patterns:find("%S") then
     error("LuaTeX accepted no patterns from " .. pattern_path, 0)
-  end
-
-  if exceptions then
-    local exceptions_ok, exceptions_error = pcall(
-      lang.hyphenation, language_object, exceptions
-    )
-    if not exceptions_ok then
-      error("invalid exceptions in azhyphen.hyp.txt: " ..
-        tostring(exceptions_error), 0)
-    end
   end
 
   initialized = true
