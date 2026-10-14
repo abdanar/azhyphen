@@ -1,78 +1,27 @@
 name: CI
-
 on:
   push:
-    branches:
-      - main
-      - ctan-workflow
-    tags:
-      - 'v*'
   pull_request:
-
 permissions:
   contents: read
-
 jobs:
   test:
-    name: Test
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-
     steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
-      - name: Install TeX Live 2026
-        uses: zauguin/install-texlive@f5e7d0b117035fff797d4392ea94131747e03d60 # v4
+      - uses: zauguin/install-texlive@f5e7d0b117035fff797d4392ea94131747e03d60 # v4
         with:
           texlive_version: 2026
           packages: >-
-            scheme-basic
-            iftex
-            luaotfload
-            luatex
-            xetex
-            fontspec
-            hyperref
-            geometry
-            cm-unicode
-
-      - name: Validate synchronized state
-        run: make validate-state
-
-      - name: Test synchronization tooling
-        run: make test-sync
-
-      - name: Test LuaLaTeX and XeLaTeX
-        run: make test
-
-      - name: Test bundled patterns
-        run: make test-real
-
-      - name: Test installation
-        run: make install-smoke
-
-      - name: Check repository consistency
-        run: make check
-
-      - name: Validate release workflow
-        run: make release-check
-
-      - name: Verify repeatable CTAN archive
-        shell: bash
+            scheme-basic patgen iftex luaotfload luatex xetex fontspec
+            hyperref geometry cm-unicode
+      - name: Verify regenerated sources
         run: |
-          archive="dist/azhyphen-$(cat VERSION).zip"
-          before=$(sha256sum "$archive" | cut -d ' ' -f 1)
-          make clean-dist
-          make ctan
-          after=$(sha256sum "$archive" | cut -d ' ' -f 1)
-          test "$before" = "$after"
-
-      - name: Retain CTAN archive
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: azhyphen-ctan
-          path: dist/azhyphen-*.zip
-          if-no-files-found: error
+          make update
+          git diff --exit-code || { echo 'Generated files are stale; run make update'; exit 1; }
+      - run: make test
+      - run: make check
+      - run: make ctan

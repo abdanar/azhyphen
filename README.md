@@ -1,100 +1,141 @@
 # azhyphen
 
-<!-- AZHYPHEN-BADGES:START -->
-![Version](https://img.shields.io/badge/version-0.1.0--development-blue)
-![License](https://img.shields.io/badge/license-LPPL%201.3c%2B-blue)
-![LuaLaTeX](https://img.shields.io/badge/LuaLaTeX-supported-2ea44f)
-![XeLaTeX](https://img.shields.io/badge/XeLaTeX-supported-2ea44f)
-![Status](https://img.shields.io/badge/status-active%20development-orange)
-<!-- AZHYPHEN-BADGES:END -->
-
-Standalone Azerbaijani hyphenation for LuaLaTeX and XeLaTeX. It does not
-require Babel, Polyglossia, or document-level language configuration.
-
-## Usage
+Standalone Azerbaijani hyphenation for **LuaLaTeX and XeLaTeX**, using native
+engine hyphenation. No Babel or Polyglossia configuration is needed.
 
 ```tex
 \documentclass{article}
+\usepackage{fontspec}
+\setmainfont{CMU Serif} % choose an Azerbaijani-capable font
 \usepackage{azhyphen}
-
 \begin{document}
 Azərbaycan dilində mətn avtomatik olaraq hecalanır.
 \end{document}
 ```
 
-Compile with LuaLaTeX or XeLaTeX. pdfLaTeX is not currently supported.
-Loading the package activates Azerbaijani hyphenation globally. XeLaTeX also
-sets Azerbaijani case mappings, including the distinct `i`/`İ` and `ı`/`I`
-pairs. Automatic switching between languages is outside this package's scope.
+Loading the package activates Azerbaijani globally, including distinct
+`i`/`İ` and `ı`/`I` mappings. Compile with LuaLaTeX or XeLaTeX; pdfLaTeX is
+unsupported. XeLaTeX requires installation into its user format first.
 
-## Current status
+## Status and quality
 
-<!-- AZHYPHEN-STATS:START -->
-The current pattern set is trained and evaluated on manually annotated
-Azerbaijani words. Evaluation uses a held-out set not used for training.
+<!-- AZHYPHEN-GENERATED:START -->
+Azhyphen **0.2.0** is currently a **development release**. Its hyphenation
+patterns are generated reproducibly from the public annotated Azerbaijani
+dataset included in this repository.
 
-| Metric | Current |
-|---|---:|
-| Training annotations | 2,007 |
-| Evaluation annotations | 263 |
-| Patterns | 291 |
-| Exact word accuracy | 65.0% |
-| Break precision | 89.0% |
-| Break recall | 92.7% |
-| Break F1 | 90.8% |
-| Correct breakpoints | 599 |
-| Wrong breakpoints | 74 |
-| Missed breakpoints | 47 |
-<!-- AZHYPHEN-STATS:END -->
+**Dataset** · 2,007 training words · 263 evaluation words · 303 patterns\
+**Quality** · 81.75% exact-word accuracy · 97.74% precision · 93.65% recall · **95.65% F1**\
+**Breakpoints** · 605 correct · 14 wrong · 41 missed
+<!-- AZHYPHEN-GENERATED:END -->
 
-These figures describe the synchronized experimental model, not complete
-linguistic coverage. The current left and right hyphenation minima are both 2
-and remain subject to linguistic and typographic review.
+Versions below 1.0.0 are development releases. Linguistic coverage is
+experimental. The left/right minima are provisionally **2/2**, pending
+Azerbaijani linguistic and typographic review. Metrics compare permitted
+breakpoints against full annotations, including edge syllables that minima
+suppress; they describe the public evaluation set, not complete language coverage.
+It is excluded from PATGEN training. Repeated development against a public
+evaluation set does not provide a permanently unbiased estimate on unseen words.
 
-## Project status
+## Install
 
-azhyphen is under active development and is already usable with LuaLaTeX and
-XeLaTeX. The Azerbaijani pattern set continues to grow and be evaluated.
-Releases in the `0.x` series are development releases, so model statistics and
-linguistic behavior may change between them. Version `1.0.0` will mark the
-first stable release after the pattern set, package behavior, and regression
-coverage are sufficiently mature. Current linguistic quality is reported
-separately above.
-
-## Installation
-
-From the repository checkout, run:
+Use TeX Live with `lualatex`, `xelatex`, `kpsewhich`, `tlmgr`, `fmtutil-user`,
+`iftex` and `luaotfload`, plus Python 3.10 or newer. From a checkout or the
+extracted CTAN source archive:
 
 ```sh
-make install
+python scripts/azhyphen.py install
 ```
 
-Installation requires a POSIX shell, GNU Make, Python 3.10 or newer, and a
-working TeX Live installation with `lualatex`, `xelatex`, `kpsewhich`, `tlmgr`,
-`fmtutil-user`, `iftex`, and `luaotfload`. Both engines must be available for
-the installation verification. Installation is tested with TeX Live 2026
-on Ubuntu and native Windows with MSYS2. See
-[Windows development](DEVELOPMENT.md#windows-development) for toolchain
-configuration. Other TeX distributions have not been verified.
+This copies five runtime files to `TEXMFHOME`, adds marked XeLaTeX language
+registrations and rebuilds only the user format. Repeat installation after
+updating patterns. Unrelated registrations are preserved. Undo with
+`python scripts/azhyphen.py uninstall`; modified or unrelated files are kept.
+Missing unrelated language loaders require repairing your TeX installation.
+See [the manual](doc/azhyphen-doc.tex) for usage and diagnostics.
 
-This installs azhyphen in your user `TEXMFHOME` and requires no root access.
-The same step performs XeLaTeX's one-time user-level language registration.
-Re-running installation is safe. Run `make uninstall` to remove only
-azhyphen-owned files and registration.
-XeLaTeX registration rebuilds your user format. If TeX Live reports an unrelated
-missing language loader, repair that TeX installation and retry; production
-installation does not replace missing loaders with test stubs.
+## Contribute
 
-## Development
+Install Python 3.10+, GNU Make and TeX Live (including `patgen`). On Windows,
+use native Python/TeX Live and GNU Make from MSYS2; put their binaries on
+PATH and set `MSYS2_PATH_TYPE=inherit` when using an MSYS2 login shell.
+The maintenance tool itself requires no shell or third-party Python modules.
 
-The linguistic data, PATGEN experiments, and authoritative model statistics
-are maintained separately. This repository contains their validated runtime
-snapshot and selected public statistics. See [DEVELOPMENT.md](DEVELOPMENT.md)
-for synchronization, testing, versioning, and release details.
-The origin and licensing of the bundled data are documented in
-[docs/PROVENANCE.md](docs/PROVENANCE.md).
+1. Edit [data/hyphenated.txt](data/hyphenated.txt): one NFC Azerbaijani word
+   per line, with ASCII `-` marking every reviewed syllable boundary.
+   Blank lines, comments, duplicate words and non-Azerbaijani characters are rejected.
+2. Run `make update`.
+3. Run `make test`.
+4. Submit the change, including generated files, with evidence for corrections.
 
-## License
+[data/evaluation.txt](data/evaluation.txt) is the public evaluation set,
+excluded from PATGEN training and used for quality measurement and regression checks.
+Do not move its words into training or tune annotations to predictions.
+Corrections to evaluation need independent linguistic evidence. Duplicate
+words and overlap between the lists are rejected, including case variants.
 
-azhyphen is released under the LaTeX Project Public License 1.3c or later. See
-[LICENSE](LICENSE).
+## Generation and maintenance
+
+`scripts/azhyphen.py` is the single portable maintenance tool. The Makefile
+provides aliases: `make update` is equivalent to
+`python scripts/azhyphen.py update`, and the other targets work the same way.
+
+- `make update` validates the word lists, regenerates PATGEN-derived runtime
+  files, evaluates quality and updates the README status.
+- `make test` runs the repository maintenance tests and LuaLaTeX/XeLaTeX
+  runtime checks; the tests are available in the GitHub repository.
+- `make check` regenerates in isolation and fails on stale generated files
+  or repository consistency errors.
+- `make stats` prints the current dataset, model and evaluation statistics
+  without writing a results file.
+- `make ctan` builds the manual and a validated, reproducible source ZIP in
+  `dist/`.
+- `make install` installs into the user's TeX tree and registers Azerbaijani
+  in the XeLaTeX user format.
+- `make uninstall` removes unmodified package-owned files and marked language
+  registrations, preserving modified files and unrelated registrations.
+- `make clean` removes `build/` and `dist/`.
+
+### Pattern generation
+
+Generation validates the two word lists, wraps training words in boundary
+dots without changing annotations, creates a UTF-8 Azerbaijani translation
+table (including dotted/dotless I), and runs **PATGEN 2.4** from an empty
+pattern file: hyphenation level **1**, pattern lengths **2–4**, good/bad
+weights **1/3**, threshold **3**, minima **2/2**. The generated canonical
+`azhyphen.pat.txt` and derived XeTeX loader are committed for package users.
+Temporary dictionaries, patterns and logs are discarded. Document compilation
+never runs PATGEN; ordinary users use the pre-generated, validated patterns.
+`make check` independently regenerates in isolation and rejects stale output.
+
+Quality is computed against the public evaluation set, excluded from training,
+using standard Liang scoring during `make update` and `make stats`.
+There is no results JSON or historical experiment archive.
+
+`VERSION` is the sole manually maintained software version; `make update`
+generates its runtime representation and README display. Changing the data
+never bumps the version.
+
+### Reproducible packaging
+
+`make ctan` builds the manual, checks both engines using staged runtime files,
+and writes `dist/azhyphen-VERSION.zip`, including public data and the generator.
+Tests, fixtures and CI stay in the GitHub repository; run `make test` there.
+ZIP members have fixed order, permissions, LF text and timestamps;
+PDF metadata is stable. Reproducibility assumes the same toolchain and
+`SOURCE_DATE_EPOCH` (default 2000-01-01 UTC).
+
+These commands never automatically commit, push, tag, create a GitHub release
+or submit to CTAN.
+
+## License, provenance and reports
+
+Software, generated patterns and package documentation: **LPPL 1.3c or later**.
+The two public annotated word lists: **CC0 1.0 Universal**. See
+[LICENSE](LICENSE) for the grants and migration provenance, and the complete
+[LPPL](LPPL-1.3c.txt) and [CC0](CC0-1.0.txt) texts.
+
+Report bugs and proposed word corrections at
+[GitHub Issues](https://github.com/abdanar/azhyphen/issues), with a minimal
+example, engine/version and linguistic evidence where relevant. Include no
+private documents or credentials.

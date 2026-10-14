@@ -1,29 +1,41 @@
+% Engine integration assertions; run against isolated fixture and real patterns.
 \documentclass{article}
+\usepackage{fontspec}
+\setmainfont{cmunrm.otf} % CMU Serif from TeX Live; no machine font-name database.
 \usepackage{azhyphen}
-
 \begin{document}
+\ifluatex
 \directlua{
   local path = assert(kpse.find_file("azhyphen.lua", "tex"))
-  local first_module = assert(loadfile(path))()
-  local first_id = first_module.activate()
-  local second_module = assert(loadfile(path))()
-  local second_id = second_module.activate()
-  assert(first_module == second_module, "azhyphen module was not cached")
-  assert(first_id == second_id, "azhyphen language ID changed on activation")
-  local object = lang.new(first_id)
-  assert(lang.gethjcode(object, utf8.codepoint("I")) == utf8.codepoint("ı"),
-    "I must map to dotless ı")
-  assert(lang.gethjcode(object, utf8.codepoint("İ")) == utf8.codepoint("i"),
-    "İ must map to dotted i")
+  local first = assert(loadfile(path))()
+  local second = assert(loadfile(path))()
+  assert(first == second, "module caching failed")
+  local id = first.activate()
+  assert(id == second.activate() and id == tex.language, "global activation failed")
+  local object = lang.new(id)
   for _, pair in ipairs({{"ç", "Ç"}, {"ə", "Ə"}, {"ğ", "Ğ"},
       {"i", "İ"}, {"ı", "I"}, {"ö", "Ö"}, {"ş", "Ş"}, {"ü", "Ü"}}) do
-    local lower = utf8.codepoint(pair[1])
-    assert(lang.gethjcode(object, lower) == lower)
-    assert(lang.gethjcode(object, utf8.codepoint(pair[2])) == lower)
+    local code = utf8.codepoint(pair[1])
+    assert(lang.gethjcode(object, code) == code)
+    assert(lang.gethjcode(object, utf8.codepoint(pair[2])) == code)
   end
-  assert(tex.language == first_id, "Azerbaijani language is not active")
-  assert(tex.lefthyphenmin == 2 and tex.righthyphenmin == 2,
-    "documented hyphenation minima are not active")
 }
+\else
+\makeatletter
+\ifnum\language=\l@azhyphen\else\errmessage{Azerbaijani language not selected}\fi
+\makeatother
+\def\checkcase#1#2{%
+  \ifnum\lccode`#2=`#1\else\errmessage{Incorrect lowercase mapping}\fi
+  \ifnum\uccode`#1=`#2\else\errmessage{Incorrect uppercase mapping}\fi}
+\checkcase{ç}{Ç}\checkcase{ə}{Ə}\checkcase{ğ}{Ğ}\checkcase{i}{İ}%
+\checkcase{ı}{I}\checkcase{ö}{Ö}\checkcase{ş}{Ş}\checkcase{ü}{Ü}%
+\fi
+\ifnum\lefthyphenmin=2\else\errmessage{Incorrect left minimum}\fi
+\ifnum\righthyphenmin=2\else\errmessage{Incorrect right minimum}\fi
+\showhyphens{fotoelektrik}
+\showhyphens{ellərarası}
+\showhyphens{addımölçən}
+\showhyphens{videobloger}
+\showhyphens{ətürpərdici}
 Runtime checks passed.
 \end{document}

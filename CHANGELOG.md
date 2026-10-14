@@ -1,9 +1,16 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.0] - 2026-10-14
 
-- Add a user manual and deterministic, allowlisted CTAN archive builds.
-- Add complete release validation, staged engine loading checks, and CI artifacts.
+- Make azhyphen self-contained with canonical annotated Azerbaijani training
+  words and a separate public evaluation set; remove the external localization dependency.
+- Regenerate the model deterministically with PATGEN from public words and empty
+  patterns, replacing historical seeding; contributors edit `data/hyphenated.txt`.
+- Simplify the repository and consolidate maintenance in one portable Python tool.
+- Dedicate both datasets under CC0 1.0; retain LPPL 1.3c or later for software,
+  runtime, generated patterns and documentation.
+- Provide a user manual and reproducible CTAN source archive containing the data
+  and generator, with repository tests and CI excluded.
 
 ## [0.1.0] - 2026-10-02
 

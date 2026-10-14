@@ -1,13 +1,12 @@
 % azhyphen user manual. LPPL 1.3c or later; Anar Abdullayev.
-% Build with make doc; the release builder inserts canonical model statistics.
+% Built by make ctan; version comes from VERSION's generated representation.
 \documentclass[11pt,a4paper]{article}
 \usepackage{fontspec}
 \usepackage[margin=25mm]{geometry}
+\usepackage[hidelinks]{hyperref}
 \setmainfont{CMU Serif}
 \setmonofont{CMU Typewriter Text}
-\usepackage[hidelinks]{hyperref}
 \input{azhyphen-version.tex}
-% Keep PDF streams inspectable and suppress volatile PDF metadata.
 \pdfvariable compresslevel=0
 \pdfvariable objcompresslevel=0
 \pdfvariable suppressoptionalinfo=767
@@ -20,159 +19,95 @@
 \begin{document}
 \maketitle
 
-\section{Purpose and status}
-\textsf{azhyphen} activates Azerbaijani hyphenation globally when loaded,
-with the same document interface for LuaLaTeX and XeLaTeX. It uses each
-engine's native hyphenation facilities and requires neither Babel nor
-Polyglossia. Automatic language switching is outside its scope.
+\section{Purpose and requirements}
+\textsf{azhyphen} activates Azerbaijani hyphenation globally on package load.
+It supports LuaLaTeX and XeLaTeX through each engine's native hyphenation
+facilities. Babel, Polyglossia, and document language configuration are
+unnecessary. pdfLaTeX is unsupported. Language switching is outside its scope.
+Use a font containing Azerbaijani letters; the package does not select one.
 
-Versions below 1.0.0 are development releases. The package is usable, but
-linguistic coverage is experimental and may change between releases.
-Software versions are independent of pattern counts and evaluation scores.
+Versions below 1.0.0 are development releases. Linguistic coverage remains
+experimental; review important typography manually. Software versions are
+independent of changes to words, patterns or quality measurements.
 
-\section{Requirements}
-Use a working TeX Live installation with LuaLaTeX or XeLaTeX and the
-\texttt{iftex} package. LuaLaTeX also requires \texttt{luaotfload}.
-pdfLaTeX and other engines are unsupported and produce a package error.
-XeLaTeX needs the named \texttt{azhyphen} language registered in its format
-before a document is compiled. Select a font containing Azerbaijani letters;
-the package does not select a document font.
+\section{User installation}
+Use TeX Live with LuaLaTeX, XeLaTeX, \texttt{iftex}, \texttt{luaotfload},
+\texttt{kpsewhich}, \texttt{tlmgr} and \texttt{fmtutil-user}. For installation
+from the repository or extracted CTAN source archive, use Python 3.10 or newer:
+\begin{verbatim}
+python scripts/azhyphen.py install
+\end{verbatim}
+No Make or shell is needed for this command. It installs five runtime files
+in your user \texttt{TEXMFHOME}, registers the named \texttt{azhyphen}
+language and rebuilds only your user XeLaTeX format. It requires no
+administrator access, preserves unrelated registrations and is repeatable.
+Repeat after updating patterns. Missing unrelated language loaders require
+repairing your TeX installation; the installer does not replace them.
 
-The repository's automated installation requires a POSIX shell, GNU Make,
-Python 3.10 or newer, and TeX Live's \texttt{kpsewhich}, \texttt{tlmgr}, and
-\texttt{fmtutil-user}. Installation is tested with TeX Live 2026 on Ubuntu
-and native Windows with MSYS2. Other TeX distributions have not been verified.
+Use \texttt{python scripts/azhyphen.py uninstall} to remove the marked
+registrations and rebuild the user format. Unrelated and modified files
+are kept. Configuration changes are restored if a rebuild fails. The shared
+language configuration may remain in the user tree, with all original
+registrations, after removal. No persistent backup or state file is needed.
 
-\section{Installation}
-When available, install via your TeX distribution's package manager.
-For a repository checkout, \texttt{make install} copies the runtime to your
-user TeX tree, registers XeLaTeX, rebuilds its format, and verifies both
-engines. Installation is repeatable and requires no administrator access.
-\texttt{make uninstall} removes only package-owned files and registration.
+To select another user tree, add \texttt{--texmfhome TREE} and set TeX's
+\texttt{TEXMFHOME} to it when compiling. Never select a system tree.
 
 \newpage
-\begin{samepage}
-\subsection{Installing the CTAN archive manually}
-The CTAN archive contains public runtime and documentation files; it does
-not contain the repository's Makefile or maintenance scripts. Obtain your
-user tree with \texttt{kpsewhich -var-value=TEXMFHOME}. Copy these files
-into its \texttt{tex/latex/azhyphen} directory:
-\begin{quote}\ttfamily
-azhyphen.sty, azhyphen.lua, azhyphen-version.tex,\\
-azhyphen.pat.txt, azhyphen.hyp.txt, azhyphen-xetex.tex
-\end{quote}
-\end{samepage}
-Keep \texttt{azhyphen-data.json} with them as a checksum manifest.
-Store the manual and licensing files in the user tree's
-\texttt{doc/latex/azhyphen} directory. LuaLaTeX can then load the patterns
-directly. Refresh the filename database if your distribution requires it.
-
-For XeLaTeX, preserve existing user language configuration. The user
-tree's \path{tex/generic/config} directory may contain
-\path{language-local.dat} and \path{language.dat}. Back up the existing
-files before editing. Add exactly one line to \path{language-local.dat}:
-\begin{verbatim}
-azhyphen azhyphen-xetex.tex
-\end{verbatim}
-If the name \texttt{azhyphen} already names another loader, resolve the
-conflict first. If a user \texttt{language.dat} exists, append the same
-line there once, preserving all unrelated entries. Otherwise generate it
-using TeX Live, substituting your user tree for \texttt{TREE}:
-\begin{verbatim}
-tlmgr generate language.dat \
-  --localcfg TREE/tex/generic/config/language-local.dat \
-  --dest TREE/tex/generic/config/language.dat
-fmtutil-user --byfmt xelatex
-\end{verbatim}
-Run the format rebuild after either method. Missing unrelated language
-loaders indicate a TeX installation problem; repair that installation and
-retry. To undo a manual installation, remove only this registration line
-from both configuration files and rebuild the user format; remove the
-package files. Restore backups only if no unrelated edits occurred since.
-The repository installer provides automated ownership and rollback handling
-and is preferable when available.
-
-\section{Basic usage}
+\section{Document usage}
 \begin{verbatim}
 \documentclass{article}
 \usepackage{fontspec}
-\setmainfont{CMU Serif} % an Azerbaijani-capable font
+\setmainfont{CMU Serif}
 \usepackage{azhyphen}
 \begin{document}
 Azərbaycan dilində mətn avtomatik olaraq hecalanır.
 \end{document}
 \end{verbatim}
-Compile with \texttt{lualatex} or \texttt{xelatex}. Load the package with
-\verb|\usepackage{azhyphen}|. No package options or document language
-configuration are required.
+Compile with \texttt{lualatex} or \texttt{xelatex}. Package options are
+unnecessary. LuaLaTeX reads pre-generated patterns directly; XeLaTeX reads
+them when its user format is rebuilt, then selects the registered language
+on package load. The mappings distinguish dotted i/İ from dotless ı/I.
 
-\subsection{LuaLaTeX}
-At load time the Lua runtime locates the bundled canonical patterns via
-kpathsea, creates a native LuaTeX language, installs its hyphenation
-character mappings, loads any exceptions, and selects it globally.
-A missing, empty, or invalid pattern file causes a clear load error.
+Both hyphenation minima are provisionally 2, pending Azerbaijani linguistic
+and typographic review. Use standard \verb|\hyphenation{...}| exceptions
+after loading the package, or explicit \verb|\-| discretionary breaks,
+for reviewed document-local corrections.
 
-\subsection{XeLaTeX}
-The format loads the mechanically generated pattern loader under the
-name \texttt{azhyphen}. Package loading selects that language globally
-and sets Azerbaijani case mappings. In particular, dotted i/İ and
-dotless ı/I remain distinct. If registration is absent, loading fails
-with an installation diagnostic. Updating the patterns or exceptions
-requires rebuilding the user XeLaTeX format.
-
-\section{Hyphenation examples}
-To inspect the current engine's permitted breakpoints in the compilation
-log, add this to a document using the package:
+\section{Diagnostics}
+Add the following to a document to see permitted breaks in its log:
 \begin{verbatim}
 \showhyphens{fotoelektrik ellərarası addımölçən}
 \showhyphens{videobloger ətürpərdici}
 \end{verbatim}
-These are diagnostic sample words, not authoritative syllabification
-claims. Actual line breaks depend on the surrounding text, font, and
-line width. Review important typography manually.
+These sample words are diagnostics, not authoritative syllabification
+claims. Actual line breaking also depends on the font, line width and context.
 
-Both left and right hyphenation minima are 2. These values are provisional
-pending Azerbaijani linguistic and typographic review. For a document-local
-reviewed correction, standard TeX \verb|\hyphenation{...}| exceptions or
-explicit \verb|\-| discretionary breaks may be used after loading the
-package. They do not change the bundled model.
+If XeLaTeX reports an unregistered language, rerun installation and check
+that it and document compilation use the same user tree. If LuaLaTeX reports
+missing or invalid patterns, reinstall the complete runtime. For missing
+glyphs, choose an Azerbaijani-capable font.
 
-\section{Bundled data and quality}
-\texttt{azhyphen.pat.txt} is the single canonical PATGEN pattern dataset.
-\texttt{azhyphen-xetex.tex} is mechanically derived from it, not a separate
-linguistic source. \texttt{azhyphen.hyp.txt} is intentionally empty until
-reviewed exceptions exist. The data manifest records checksums of the
-canonical patterns and derived loader.
+\section{Public data, license and support}
+The public annotated training and separate evaluation lists are included under
+\path{data/}. \texttt{PATGEN} generates patterns reproducibly from the training words
+and empty patterns; the public evaluation set is excluded from training.
+Repeated development against this public set is not a permanently unbiased
+estimate on unseen words. Compilation uses pre-generated patterns and never
+trains a model. The canonical \texttt{azhyphen.pat.txt} has one mechanically
+derived XeTeX loader. The source archive includes the public data and generator;
+tests remain in the GitHub repository. README describes contribution and
+regeneration, and displays current evaluation statistics in its generated block.
+Unseen words, names and compounds may require manual correction.
 
-Public statistics come from the matching localization snapshot and are
-inserted into this manual during the build. Evaluation uses held-out
-manually annotated words that were not used for training.
+Software, generated patterns and documentation are maintained under LPPL
+1.3c or later. The two annotated word lists are separately dedicated under
+CC0 1.0 Universal. See \texttt{LICENSE}, \texttt{LPPL-1.3c.txt} and
+\texttt{CC0-1.0.txt} for licensing and migration provenance.
+Current Maintainer: Anar Abdullayev.
 
-% AZHYPHEN-DOC-STATS:START
-\emph{Run make doc to insert the synchronized public model statistics.}
-% AZHYPHEN-DOC-STATS:END
-
-These metrics describe the bundled experimental model, not complete
-coverage of Azerbaijani. Proper names, compounds, loanwords, and other
-unseen words may need manual correction. The package supplies no language
-switching, translation, or other language-management features.
-
-\section{Provenance, license, and support}
-The patterns and public statistics originate in Anar Abdullayev's separate
-localization project. This distribution contains a validated snapshot;
-runtime use requires no access to the training project. The exact source
-commit and distribution grant are recorded in \texttt{PROVENANCE.md}
-(\texttt{docs/PROVENANCE.md} in the repository). Training inputs and
-evaluation archives are outside this package's distribution scope.
-
-The maintained work, including bundled patterns and documentation, is
-licensed under the LaTeX Project Public License 1.3c or later. See
-\texttt{LICENSE} and the complete \texttt{LPPL-1.3c.txt}. The current
-maintainer is Anar Abdullayev.
-
-Source and bug reports: \url{https://github.com/abdanar/azhyphen}.
-Report package or installation problems with the engine, TeX distribution,
-and a minimal reproduction. Report linguistic issues separately, showing
-the word, observed breakpoints, and the proposed correction with evidence.
-Do not include private documents or corpus inputs.
+Source and reports: \url{https://github.com/abdanar/azhyphen}.
+Supply the engine, TeX distribution and a minimal example for package issues.
+For linguistic issues, show the word, observed breaks and a proposed correction
+with evidence. Include no private documents or credentials.
 \end{document}

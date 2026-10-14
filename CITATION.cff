@@ -1,9 +1,0 @@
-cff-version: 1.2.0
-message: "If you use this software, please cite it using this metadata."
-title: azhyphen
-type: software
-authors:
-  - family-names: Abdullayev
-    given-names: Anar
-version: "0.1.0"
-license: LPPL-1.3c
