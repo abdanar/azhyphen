@@ -24,4 +24,4 @@ jobs:
           git diff --exit-code || { echo 'Generated files are stale; run make update'; exit 1; }
       - run: make test
       - run: make check
-      - run: make ctan
+      - run: make doc

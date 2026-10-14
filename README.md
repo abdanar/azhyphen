@@ -37,11 +37,16 @@ suppress; they describe the public evaluation set, not complete language coverag
 It is excluded from PATGEN training. Repeated development against a public
 evaluation set does not provide a permanently unbiased estimate on unseen words.
 
+azhyphen remains a standalone GitHub-hosted project under active development.
+Future integration with standard TeX hyphenation distributions may be explored
+through the [tex-hyphen mailing list](mailto:tex-hyphen@tug.org); no integration
+has taken place.
+
 ## Install
 
 Use TeX Live with `lualatex`, `xelatex`, `kpsewhich`, `tlmgr`, `fmtutil-user`,
-`iftex` and `luaotfload`, plus Python 3.10 or newer. From a checkout or the
-extracted CTAN source archive:
+`iftex`, `luaotfload` and `fontspec`, plus Python 3.10 or newer. Install manually
+from a GitHub source checkout or extracted GitHub source ZIP:
 
 ```sh
 python scripts/azhyphen.py install
@@ -88,13 +93,12 @@ provides aliases: `make update` is equivalent to
   or repository consistency errors.
 - `make stats` prints the current dataset, model and evaluation statistics
   without writing a results file.
-- `make ctan` builds the manual and a validated, reproducible source ZIP in
-  `dist/`.
+- `make doc` builds and checks the user manual in `build/azhyphen-doc.pdf`.
 - `make install` installs into the user's TeX tree and registers Azerbaijani
   in the XeLaTeX user format.
 - `make uninstall` removes unmodified package-owned files and marked language
   registrations, preserving modified files and unrelated registrations.
-- `make clean` removes `build/` and `dist/`.
+- `make clean` removes `build/`; saved release archives in `dist/` are preserved.
 
 ### Pattern generation
 
@@ -115,18 +119,6 @@ There is no results JSON or historical experiment archive.
 `VERSION` is the sole manually maintained software version; `make update`
 generates its runtime representation and README display. Changing the data
 never bumps the version.
-
-### Reproducible packaging
-
-`make ctan` builds the manual, checks both engines using staged runtime files,
-and writes `dist/azhyphen-VERSION.zip`, including public data and the generator.
-Tests, fixtures and CI stay in the GitHub repository; run `make test` there.
-ZIP members have fixed order, permissions, LF text and timestamps;
-PDF metadata is stable. Reproducibility assumes the same toolchain and
-`SOURCE_DATE_EPOCH` (default 2000-01-01 UTC).
-
-These commands never automatically commit, push, tag, create a GitHub release
-or submit to CTAN.
 
 ## License, provenance and reports
 

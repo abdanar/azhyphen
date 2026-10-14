@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Generate, check, test, install and package azhyphen. Python 3.10+, stdlib only."""
+"""Generate, check, test, document and install azhyphen. Python 3.10+, stdlib only."""
 
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import hashlib
 import os
 from pathlib import Path
@@ -15,7 +14,6 @@ import subprocess
 import sys
 import tempfile
 import unicodedata
-import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 LOWER = "abcçdeəfgğhxıijkqlmnoöprsştuüvyz"
@@ -26,9 +24,9 @@ MINIMUM = 2
 PATGEN_INPUT = "1 1\n2 4\n1 3 3\nn\n"
 RUNTIME = ("azhyphen.sty", "azhyphen.lua", "azhyphen.pat.txt",
            "azhyphen-xetex.tex", "azhyphen-version.tex")
-SOURCES = (*RUNTIME, "VERSION", "README.md", "LICENSE", "LPPL-1.3c.txt",
-           "CC0-1.0.txt", "CHANGELOG.md", "Makefile", "data/hyphenated.txt",
-           "data/evaluation.txt", "scripts/azhyphen.py", "doc/azhyphen-doc.tex")
+REQUIRED = (*RUNTIME, "VERSION", "README.md", "LICENSE", "LPPL-1.3c.txt",
+            "CC0-1.0.txt", "CHANGELOG.md", "Makefile", "data/hyphenated.txt",
+            "data/evaluation.txt", "scripts/azhyphen.py", "doc/azhyphen-doc.tex")
 TEST_WORDS = ("fotoelektrik", "ellərarası", "addımölçən", "videobloger", "ətürpərdici")
 START = "<!-- AZHYPHEN-GENERATED:START -->"
 END = "<!-- AZHYPHEN-GENERATED:END -->"
@@ -230,7 +228,7 @@ def update(root: Path = ROOT, check: bool = False) -> None:
 
 
 def privacy(name: str, raw: bytes) -> None:
-    # Build paths and credentials never belong in public sources or archives.
+    # Build paths and credentials never belong in public sources.
     if re.search(rb"(?<![A-Za-z])[A-Za-z]:[\\/]|/(?:Users|home|private|mnt)/|(?<!\\)\\\\[\w.-]+\\(?!\\)[\w.-]+\\(?!\\)", raw):
         raise ValueError(f"private absolute path in {name}")
     if any(token in raw for token in (b"gh" + b"p_", b"github" + b"_pat_", b"BEGIN " + b"PRIVATE KEY",
@@ -250,24 +248,18 @@ def check() -> None:
                        {".git", "build", "dist", "__pycache__", ".venv"}]
         names.extend((Path(directory) / name).relative_to(ROOT).as_posix()
                      for name in files if name != ".env")
-    missing = set(SOURCES) - set(names)
+    missing = set(REQUIRED) - set(names)
     if missing:
         raise ValueError("missing source files: " + ", ".join(sorted(missing)))
     for name in names:
         path = ROOT / name
         if path.is_symlink() or not path.is_file():
             raise ValueError(f"expected regular source file: {name}")
-        if name == "doc/azhyphen-doc.pdf":
-            raw = path.read_bytes()
-            if not raw.startswith(b"%PDF-") or b"%%EOF" not in raw[-1024:]:
-                raise ValueError("invalid distributed manual PDF")
-            privacy(name, raw)
-            continue
+        if path.suffix in {".json", ".pdf", ".zip", ".log", ".fmt", ".pyc"}:
+            raise ValueError("unexpected generated artifact outside build/dist: " + name)
         raw = text_bytes(path)
         raw.decode("utf-8")
         privacy(name, raw)
-        if path.suffix in {".json", ".pdf", ".zip", ".log", ".fmt", ".pyc"}:
-            raise ValueError("unexpected generated artifact outside build/dist: " + name)
     workflow = ROOT / ".github/workflows/ci.yml"
     if workflow.exists():
         text = workflow.read_text(encoding="utf-8")
@@ -428,7 +420,7 @@ def compile_tex(source: bytes, work: Path, engine: str, env: dict[str, str],
     return re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m[1], 16)), log)
 
 
-def runtime_test(runtime: Path = ROOT, fixture: bool = False, source: bytes | None = None) -> None:
+def runtime_test(runtime: Path = ROOT, fixture: bool = False) -> None:
     with tempfile.TemporaryDirectory(prefix="azhyphen-runtime.") as temporary:
         work = Path(temporary)
         env = tex_environment(work)
@@ -444,7 +436,7 @@ def runtime_test(runtime: Path = ROOT, fixture: bool = False, source: bytes | No
         prepare_test_languages(home, env)
         registration(home, env, True)
         registration(home, env, True)
-        source = source if source is not None else text_bytes(ROOT / "tests/runtime.tex")
+        source = text_bytes(ROOT / "tests/runtime.tex")
         model = patterns(text_bytes(package / "azhyphen.pat.txt"))
         expected = ["".join(("-" if i in predict(word, model) else "") + ch
                             for i, ch in enumerate(word)) for word in TEST_WORDS]
@@ -484,87 +476,39 @@ def runtime_test(runtime: Path = ROOT, fixture: bool = False, source: bytes | No
           ", Azerbaijani mappings, native breaks and reversible registration passed")
 
 
-def epoch() -> int:
-    timestamp = int(os.environ.get("SOURCE_DATE_EPOCH", "946684800"))
-    if not 315532800 <= timestamp <= 4354819199:
-        raise ValueError("SOURCE_DATE_EPOCH must fit ZIP dates (1980–2107)")
-    return timestamp
-
-
-def archive_bytes() -> dict[str, bytes]:
-    return {name: text_bytes(ROOT / name) for name in SOURCES}
-
-
-def archive_write(target: Path, files: dict[str, bytes], timestamp: int) -> None:
-    date = datetime.fromtimestamp(timestamp, timezone.utc).timetuple()[:6]
-    with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_STORED) as archive:
-        for name, raw in sorted(files.items()):
-            privacy(name, raw)
-            entry = zipfile.ZipInfo("azhyphen/" + name, date_time=date)
-            entry.create_system = 3
-            entry.external_attr = 0o100644 << 16
-            archive.writestr(entry, raw)
-    with zipfile.ZipFile(target) as archive:
-        if (archive.testzip() or len(archive.namelist()) != len(files) or
-            set(archive.namelist()) != {"azhyphen/" + name for name in files} or
-            any(archive.read("azhyphen/" + name) != raw for name, raw in files.items())):
-            raise ValueError("archive inspection failed")
-
-
-def ctan() -> Path:
+def doc() -> Path:
     check()
-    timestamp = epoch()
-    build = ROOT / "build/ctan"
+    build = ROOT / "build"
     if build.resolve() != build or build.is_symlink():
-        raise ValueError("refusing redirected CTAN build directory")
+        raise ValueError("refusing redirected documentation build directory")
     build.mkdir(parents=True, exist_ok=True)
-    files = archive_bytes()
-    with tempfile.TemporaryDirectory(prefix="stage.", dir=build) as temporary:
+    with tempfile.TemporaryDirectory(prefix="manual.", dir=build) as temporary:
         work = Path(temporary)
-        env = dict(os.environ, SOURCE_DATE_EPOCH=str(timestamp), FORCE_SOURCE_DATE="1", TZ="UTC",
-                   TEXINPUTS="." + os.pathsep, LUAINPUTS="." + os.pathsep)
-        write(work / "azhyphen-version.tex", files["azhyphen-version.tex"])
-        log = compile_tex(files["doc/azhyphen-doc.tex"], work, "lualatex", env, passes=2)
+        env = dict(os.environ, TEXINPUTS="." + os.pathsep)
+        write(work / "azhyphen-version.tex", text_bytes(ROOT / "azhyphen-version.tex"))
+        log = compile_tex(text_bytes(ROOT / "doc/azhyphen-doc.tex"), work, "lualatex", env, passes=2)
         if any(token in log for token in ("Missing character:", "undefined references", "Overfull \\hbox")):
             raise ValueError("manual contains missing glyphs, unresolved references or overfull lines")
-        files["doc/azhyphen-doc.pdf"] = (work / "document.pdf").read_bytes()
-        if not files["doc/azhyphen-doc.pdf"].startswith(b"%PDF-"):
+        raw = (work / "document.pdf").read_bytes()
+        if not raw.startswith(b"%PDF-"):
             raise ValueError("manual PDF missing")
-        stage = work / "azhyphen"
-        for name, raw in files.items():
-            write(stage / name, raw)
-        # Keep repository tests out of CTAN; its generator can verify staged
-        # native breakpoints with this minimal document in an extracted archive.
-        smoke = (r"\documentclass{article}\usepackage{fontspec}\setmainfont{cmunrm.otf}"
-                 r"\usepackage{azhyphen}\begin{document}" + "\n" +
-                 "\n".join(r"\showhyphens{" + word + "}" for word in TEST_WORDS) +
-                 r"\end{document}")
-        runtime_test(stage, source=smoke.encode("utf-8"))
-        candidate = work / "archive.zip"
-        archive_write(candidate, files, timestamp)
-        destination = ROOT / "dist"
-        if destination.resolve() != destination or destination.is_symlink():
-            raise ValueError("refusing redirected distribution directory")
-        destination.mkdir(exist_ok=True)
-        target = destination / f"azhyphen-{version()}.zip"
-        os.replace(candidate, target)
-        write(ROOT / "build/azhyphen-doc.pdf", files["doc/azhyphen-doc.pdf"])
-    print(f"{target.relative_to(ROOT)}\nSHA-256: {hashlib.sha256(target.read_bytes()).hexdigest()}")
+        target = build / "azhyphen-doc.pdf"
+        write(target, raw)
+    print(target.relative_to(ROOT))
     return target
 
 
 def clean() -> None:
-    for name in ("build", "dist"):
-        path = ROOT / name
-        if path.resolve() != path or path.is_symlink():
-            raise ValueError("refusing redirected cleanup directory: " + name)
-        if path.exists():
-            shutil.rmtree(path)
+    path = ROOT / "build"
+    if path.resolve() != path or path.is_symlink():
+        raise ValueError("refusing redirected cleanup directory: build")
+    if path.exists():
+        shutil.rmtree(path)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("update", "test", "check", "stats", "ctan", "clean", "install", "uninstall"))
+    parser.add_argument("action", choices=("update", "test", "check", "stats", "doc", "clean", "install", "uninstall"))
     parser.add_argument("--texmfhome", type=Path, help="user TeX tree for install/uninstall")
     args = parser.parse_args()
     try:
@@ -583,13 +527,13 @@ def main() -> int:
             train, evaluation = datasets()
             for name, value in statistics(train, evaluation, text_bytes(ROOT / "azhyphen.pat.txt")).items():
                 print(f"{name}: {value:.2f}" if isinstance(value, float) else f"{name}: {value}")
-        elif args.action == "ctan":
-            ctan()
+        elif args.action == "doc":
+            doc()
         elif args.action == "clean":
             clean()
         else:
             installation(args.action == "install", args.texmfhome)
-    except (OSError, UnicodeError, ValueError, subprocess.TimeoutExpired, zipfile.BadZipFile) as exc:
+    except (OSError, UnicodeError, ValueError, subprocess.TimeoutExpired) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     return 0

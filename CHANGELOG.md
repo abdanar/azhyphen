@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+- Focus maintenance on the standalone GitHub project; remove the source ZIP
+  builder and retain local manual builds with `make doc`.
+- Clarify manual source installation and the possibility of future integration
+  through the tex-hyphen mailing list.
+
 ## [0.2.1] - 2026-10-14
 
 - Polish the user manual's usage, installation, contribution and quality explanations.

@@ -7,7 +7,6 @@ import tempfile
 import unittest
 from unittest.mock import patch
 import sys
-import zipfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import azhyphen as az
@@ -161,45 +160,23 @@ class MaintenanceTests(unittest.TestCase):
                 az.update(root)
                 self.assertEqual((root / "README.md").read_bytes(), original)
 
-    def test_ctan_construction_excludes_repository_material(self):
+    def test_repository_check_rejects_generated_artifacts(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            for name in az.SOURCES:
+            for name in az.REQUIRED:
                 (root / name).parent.mkdir(parents=True, exist_ok=True)
                 (root / name).write_bytes(az.text_bytes(az.ROOT / name))
-            for name in ('tests/fixture.txt', '.github/workflows/ci.yml', 'build/probe.py'):
+            for name in ('build/manual.pdf', 'dist/saved-release.zip'):
                 (root / name).parent.mkdir(parents=True, exist_ok=True)
-                (root / name).write_text('repository only')
-            def compile_manual(source, work, *args, **kwargs):
-                (work / 'document.pdf').write_bytes(b'%PDF-1.7\n%%EOF\n')
-                return ''
-            with patch.object(az, 'ROOT', root), patch.object(az, 'check'), \
-                 patch.object(az, 'compile_tex', side_effect=compile_manual), \
-                 patch.object(az, 'runtime_test') as smoke:
-                target = az.ctan()
-            with zipfile.ZipFile(target) as archive:
-                self.assertEqual(set(archive.namelist()), {'azhyphen/' + name for name in az.SOURCES} | {'azhyphen/doc/azhyphen-doc.pdf'})
-                self.assertEqual(len(archive.namelist()), 17)
-                self.assertFalse(any('/tests/' in name or '/.git' in name or '/build/' in name for name in archive.namelist()))
-            self.assertIn(b'\\usepackage{azhyphen}', smoke.call_args.kwargs['source'])
-
-    def test_extracted_ctan_source_check_accepts_only_the_manual_pdf(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            for name in az.SOURCES:
-                (root / name).parent.mkdir(parents=True, exist_ok=True)
-                (root / name).write_bytes(az.text_bytes(az.ROOT / name))
-            manual = root / 'doc/azhyphen-doc.pdf'
-            manual.write_bytes(b'%PDF-1.7\n\xff\n%%EOF\n')
+                (root / name).write_bytes(b'disposable or local output')
             with patch.object(az, 'ROOT', root):
                 az.check()
-                manual.write_bytes(b'not a PDF')
-                with self.assertRaisesRegex(ValueError, 'manual PDF'):
-                    az.check()
-                manual.write_bytes(b'%PDF-1.7\n%%EOF\n')
-                (root / 'doc/unexpected.pdf').write_bytes(b'other generated file')
-                with self.assertRaisesRegex(ValueError, 'unexpected generated artifact'):
-                    az.check()
+                for name in ('doc/azhyphen-doc.pdf', 'unexpected.zip', 'results.json'):
+                    path = root / name
+                    path.write_bytes(b'%PDF-1.7\n\xff\n%%EOF\n')
+                    with self.assertRaisesRegex(ValueError, 'unexpected generated artifact'):
+                        az.check()
+                    path.unlink()
 
     def test_registration_ownership_idempotence_and_rollback(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -267,19 +244,21 @@ class MaintenanceTests(unittest.TestCase):
                 self.assertEqual(set(p.name for p in package.iterdir()), {'unrelated.txt', 'azhyphen.lua'})
                 self.assertEqual((package / "azhyphen.lua").read_bytes(), b"user modified")
 
-    def test_archive_exact_members_bytes_and_metadata(self):
+    def test_clean_preserves_saved_releases_and_sources(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            files = {"data/hyphenated.txt": "Azər-bay-can\n".encode(), "azhyphen.sty": b"runtime\n"}
-            first, second = root / "one.zip", root / "two.zip"
-            az.archive_write(first, files, 946684800)
-            az.archive_write(second, files, 946684800)
-            self.assertEqual(first.read_bytes(), second.read_bytes())
-            with zipfile.ZipFile(first) as archive:
-                self.assertEqual(archive.namelist(), sorted("azhyphen/" + s for s in files))
-                for entry in archive.infolist():
-                    self.assertEqual(entry.external_attr >> 16, 0o100644)
-                    self.assertEqual(entry.date_time, (2000, 1, 1, 0, 0, 0))
+            saved = {"dist/saved-release.zip": b"saved release",
+                     "data/hyphenated.txt": "Azər-bay-can\n".encode(),
+                     "azhyphen.sty": b"runtime\n"}
+            for name, raw in {**saved, "build/manual.pdf": b"generated"}.items():
+                (root / name).parent.mkdir(parents=True, exist_ok=True)
+                (root / name).write_bytes(raw)
+            with patch.object(az, 'ROOT', root):
+                az.clean()
+                az.clean()
+            self.assertFalse((root / 'build').exists())
+            for name, raw in saved.items():
+                self.assertEqual((root / name).read_bytes(), raw)
 
     def test_privacy_scan(self):
         for private in (b"C:" + b"\\Users\\someone",

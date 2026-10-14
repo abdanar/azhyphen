@@ -1,5 +1,5 @@
 % azhyphen user manual. LPPL 1.3c or later; Anar Abdullayev.
-% Built by make ctan; version comes from VERSION's generated representation.
+% Built by make doc; version comes from VERSION's generated representation.
 \documentclass[11pt,a4paper]{article}
 \usepackage{fontspec}
 \usepackage[margin=25mm]{geometry}
@@ -7,9 +7,6 @@
 \setmainfont{CMU Serif}
 \setmonofont{CMU Typewriter Text}
 \input{azhyphen-version.tex}
-\pdfvariable compresslevel=0
-\pdfvariable objcompresslevel=0
-\pdfvariable suppressoptionalinfo=767
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{4pt}
 \setlength{\emergencystretch}{2em}
@@ -54,10 +51,8 @@ actual line breaks also depend on the font, line width and context.
 To inspect permitted breaks in the log, use \verb|\showhyphens{fotoelektrik}|.
 
 \section{Installation}
-If your TeX distribution provides \textsf{azhyphen}, use its package manager.
-
-Source releases are available at
-\url{https://github.com/abdanar/azhyphen/releases}.
+Install manually from a GitHub source checkout or source ZIP:
+\url{https://github.com/abdanar/azhyphen}.
 
 For source installation, use Python 3.10 or newer and TeX Live with LuaLaTeX,
 XeLaTeX, \texttt{iftex}, \texttt{luaotfload} and \texttt{fontspec}.
@@ -121,8 +116,8 @@ Development requires Python 3.10 or newer, GNU Make and TeX Live with
 \texttt{patgen}; tests remain in the GitHub repository. \texttt{make update}
 regenerates patterns, derived files and the README quality summary;
 \texttt{make test} runs maintenance and engine tests. \texttt{make check}
-detects stale generated files, and \texttt{make ctan} builds the reproducible
-source archive. See the README for details.
+detects stale generated files, and \texttt{make doc} builds the user manual.
+See the README for details.
 
 \section{License and support}
 Software, runtime files, generated patterns and documentation are licensed
