@@ -1,3 +1,4 @@
+a1ç
 a1f
 a1m
 a1o
@@ -18,11 +19,13 @@ b1s
 1cı
 1ci
 c1l
+c1r
 1cü
 1ça
 1çı
 1çi
 1da
+d1b
 d1d
 1de
 1də
@@ -46,6 +49,7 @@ e1o
 ə1v
 ə1y
 1fa
+f1ç
 1fe
 1fə
 f1f
@@ -84,12 +88,12 @@ x1ş
 1xu
 ı1c
 ı1d
-ı1ğ
 ı1s
 i1a
 i1c
 i1ç
 i1ə
+i1g
 i1o
 i1y
 1ka
@@ -107,6 +111,7 @@ k1s
 k1t
 1kü
 k1v
+k1y
 1qa
 q1ç
 1qə
@@ -137,7 +142,6 @@ l1q
 l1l
 l1m
 1lo
-l1p
 l1s
 l1ş
 1lu
@@ -158,6 +162,7 @@ m1r
 m1s
 1na
 n1b
+n1c
 n1ç
 n1d
 1ne
@@ -173,7 +178,9 @@ n1n
 1no
 n1s
 n1ş
+n1t
 1nu
+1nü
 n1z
 o1b
 o1g
@@ -188,6 +195,7 @@ p1d
 1pə
 1pı
 1pi
+p1k
 p1l
 p1p
 p1t
@@ -250,13 +258,13 @@ t1d
 1ti
 t1l
 t1m
+t1n
 1to
 t1p
 t1s
 1tu
 1tü
 u1c
-u1x
 u1v
 ü1ç
 ü1q
@@ -281,6 +289,7 @@ y1k
 y1l
 y1m
 y1n
+1yo
 y1r
 y1s
 y1t

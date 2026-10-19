@@ -9,6 +9,7 @@ a-cı-lat-maq
 a-cıt-maq
 ad-lan-dır-maq
 a-həng
+a-lov-lat-ma
 al-çal-maq
 aq-ro-tu-rizm
 a-zalt-ma
@@ -21,6 +22,8 @@ bas-mar-la-ma
 bas-mar-la-maq
 bay-ram-bə-yi
 bağ-lat-dır-ma
+baş-maq-sız
+be-yin-li
 biz-lən-mə
 bi-şi-ril-mək
 bol-laş-dı-rıl-ma
@@ -28,13 +31,16 @@ bro-şür
 bu-rax-maq
 bu-run-suz
 ca-van-laş-dı-rıl-ma
+cid-di-lik
 ci-had
 cü-rət-lən-mə
 cüt-lə-mə
 da-ma-la-ma
+da-nıl-maq
 da-rat-ma
 dar-tı-lı
 dağ-lat-ma
+de-dirt-mək
 di-gər
 di-ri-baş
 do-luş-maq
@@ -58,9 +64,11 @@ ev-siz
 eşq-siz
 far-for-suz
 fər-man
+fə-sad-çı
 gir-də-ləş-mək
 göl-məc
 gön-də-ril-mək
+gör-məz-lik
 göz-bə-göz
 göz-lə-ni-lən
 göz-lət-mək
@@ -129,6 +137,7 @@ mə-nim-sə-mək
 nal-tö-kən
 na-qil-çə-kən
 na-rın-lan-maq
+naz-la-maq
 naz-lı
 na-ü-mid-lik
 ne-o-re-a-list
@@ -137,6 +146,7 @@ no-ri-ya
 nö-kər
 nə-ca-bət-siz
 nə-qə-rat
+nə-za-rət-siz-lik
 ok-sid-ləş-mək
 o-raq-la-ma
 or-du
@@ -153,15 +163,18 @@ pe-da-qoq-luq
 pik-sel-ləş-dir-mək
 pi-lot
 pro-ton
+pəh-lə-vi
 qab-la-yı-cı
 qar-ma-lat-maq
 qar-pın-maq
 qar-şı-la-maq
+qa-yə-siz
 qa-ğıl-dat-maq
 qi-da
 qo-xut-maq
 qoç-buy-nu-zu
 qulp-lat-maq
+quş-çu-luq
 qırx-düy-mə-li
 qırx-dı-rıl-maq
 qız-mar-lıq
@@ -170,6 +183,7 @@ ra-hib-lik
 rent-ge-no-lo-gi-ya
 rinq-dən-kə-nar
 rum
+saf-laş-dır-ma
 sa-la-mat-laş-ma
 sal-xım
 san-caq-lan-dır-maq
@@ -183,6 +197,7 @@ sif-tə-lə-mə
 si-ya-hı-sız
 sol-laş-dır-ma
 sor-ğu
+sus-dur-maq
 su-sər-çə-si
 sü-rü-nən
 sə-bat-sız-lıq
@@ -224,6 +239,7 @@ ya-ba-diş-li
 ya-ra-şıq-sız-lıq
 ya-rı-biş-miş
 yas-tıq-sız
+ya-tı-rım
 yaz-lı
 yağ-tu-tan
 yed-di-litr-lik
@@ -231,6 +247,7 @@ ye-kə-buy-nuz-lu
 ye-kə-göz
 yen-gə-li
 ye-ni-ləş-di-ri-ci
+yen-məz
 yol-bi-lən
 yu-maq-la-ma
 yum-ruq-lat-ma
@@ -246,6 +263,7 @@ zə-rər-siz-ləş-mə
 çə-lim
 çə-mən-li
 çə-pər-ba-şı
+öl-çü-süz-lük
 öp-dür-mək
 öy-rəş-mə
 ö-zün-dən-bəy
