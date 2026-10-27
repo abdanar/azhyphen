@@ -24,9 +24,9 @@ Azhyphen **0.2.1** is currently a **development release**. Its hyphenation
 patterns are generated reproducibly from the public annotated Azerbaijani
 dataset included in this repository.
 
-**Dataset** · 2,600 training words · 330 evaluation words · 336 patterns\
-**Quality** · 79.70% exact-word accuracy · 96.27% precision · 94.63% recall · **95.44% F1**\
-**Breakpoints** · 775 correct · 30 wrong · 44 missed
+**Dataset** · 3,000 training words · 373 evaluation words · 353 patterns\
+**Quality** · 80.43% exact-word accuracy · 97.03% precision · 94.12% recall · **95.55% F1**\
+**Breakpoints** · 881 correct · 27 wrong · 55 missed
 <!-- AZHYPHEN-GENERATED:END -->
 
 Versions below 1.0.0 are development releases. Linguistic coverage is
